@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lem-in Visualizer - Example 05</title>
+    <script src="https://unpkg.com/force-graph"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            font-family: sans-serif;
+        }
+        #graph-container { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+
+    <div id="graph-container"></div>
+
+    <script>
+        // 1. DATA SETUP
+        // A scale multiplier is needed because coordinates like "1 0" and "2 0"
+        // are too close together in pixels for a screen.
+        const scale = 60;
+
+        // Nodes based on example05 rooms and coordinates.
+        // 'fx' and 'fy' tell the library to fix the node permanently at this exact pixel location.
+        const lemInData = {
+            nodes: [
+                { id: 'start', name: 'start', group: 'start', fx: 0 * scale, fy: 3 * scale },
+                { id: 'end', name: 'end', group: 'end', fx: 10 * scale, fy: 1 * scale },
+                { id: 'C0', name: 'C0', group: 'room', fx: 1 * scale, fy: 0 * scale },
+                { id: 'C1', name: 'C1', group: 'room', fx: 2 * scale, fy: 0 * scale },
+                { id: 'C2', name: 'C2', group: 'room', fx: 3 * scale, fy: 0 * scale },
+                { id: 'C3', name: 'C3', group: 'room', fx: 4 * scale, fy: 0 * scale },
+                { id: 'I4', name: 'I4', group: 'room', fx: 5 * scale, fy: 0 * scale },
+                { id: 'I5', name: 'I5', group: 'room', fx: 6 * scale, fy: 0 * scale },
+                { id: 'A0', name: 'A0', group: 'room', fx: 1 * scale, fy: 2 * scale },
+                { id: 'A1', name: 'A1', group: 'room', fx: 2 * scale, fy: 1 * scale },
+                { id: 'A2', name: 'A2', group: 'room', fx: 4 * scale, fy: 1 * scale },
+                { id: 'B0', name: 'B0', group: 'room', fx: 1 * scale, fy: 4 * scale },
+                { id: 'B1', name: 'B1', group: 'room', fx: 2 * scale, fy: 4 * scale },
+                { id: 'E2', name: 'E2', group: 'room', fx: 6 * scale, fy: 4 * scale },
+                { id: 'D1', name: 'D1', group: 'room', fx: 6 * scale, fy: 3 * scale },
+                { id: 'D2', name: 'D2', group: 'room', fx: 7 * scale, fy: 3 * scale },
+                { id: 'D3', name: 'D3', group: 'room', fx: 8 * scale, fy: 3 * scale },
+                { id: 'H4', name: 'H4', group: 'room', fx: 4 * scale, fy: 2 * scale },
+                { id: 'H3', name: 'H3', group: 'room', fx: 5 * scale, fy: 2 * scale },
+                { id: 'F2', name: 'F2', group: 'room', fx: 6 * scale, fy: 2 * scale },
+                { id: 'F3', name: 'F3', group: 'room', fx: 7 * scale, fy: 2 * scale },
+                { id: 'F4', name: 'F4', group: 'room', fx: 8 * scale, fy: 2 * scale },
+                { id: 'G0', name: 'G0', group: 'room', fx: 1 * scale, fy: 5 * scale },
+                { id: 'G1', name: 'G1', group: 'room', fx: 2 * scale, fy: 5 * scale },
+                { id: 'G2', name: 'G2', group: 'room', fx: 3 * scale, fy: 5 * scale },
+                { id: 'G3', name: 'G3', group: 'room', fx: 4 * scale, fy: 5 * scale },
+                { id: 'G4', name: 'G4', group: 'room', fx: 6 * scale, fy: 5 * scale }
+            ],
+            // Links represent the tunnels connecting the rooms.
+            links: [
+                { source: 'H3', target: 'F2' }, { source: 'H3', target: 'H4' }, { source: 'H4', target: 'A2' },
+                { source: 'start', target: 'G0' }, { source: 'G0', target: 'G1' }, { source: 'G1', target: 'G2' },
+                { source: 'G2', target: 'G3' }, { source: 'G3', target: 'G4' }, { source: 'G4', target: 'D3' },
+                { source: 'start', target: 'A0' }, { source: 'A0', target: 'A1' }, { source: 'A0', target: 'D1' },
+                { source: 'A1', target: 'A2' }, { source: 'A1', target: 'B1' }, { source: 'A2', target: 'end' },
+                { source: 'A2', target: 'C3' }, { source: 'start', target: 'B0' }, { source: 'B0', target: 'B1' },
+                { source: 'B1', target: 'E2' }, { source: 'start', target: 'C0' }, { source: 'C0', target: 'C1' },
+                { source: 'C1', target: 'C2' }, { source: 'C2', target: 'C3' }, { source: 'C3', target: 'I4' },
+                { source: 'D1', target: 'D2' }, { source: 'D1', target: 'F2' }, { source: 'D2', target: 'E2' },
+                { source: 'D2', target: 'D3' }, { source: 'D2', target: 'F3' }, { source: 'D3', target: 'end' },
+                { source: 'F2', target: 'F3' }, { source: 'F3', target: 'F4' }, { source: 'F4', target: 'end' },
+                { source: 'I4', target: 'I5' }, { source: 'I5', target: 'end' }
+            ]
+        };
+
+        const elem = document.getElementById('graph-container');
+
+        // 2. GRAPH INITIALIZATION
+        const Graph = ForceGraph()(elem)
+            .graphData(lemInData)
+            .nodeId('id')
+
+            // Interaction settings
+            .enableNodeDrag(false) // Prevents dragging nodes, keeping the map static
+
+            // Styling
+            .linkWidth(2)
+            .linkColor(() => '#666')
+
+            // 3. CUSTOM NODE RENDERING
+            // This function replaces the default dots with custom circles and text labels.
+            .nodeCanvasObject((node, ctx, globalScale) => {
+                const label = node.name;
+                const fontSize = 16 / globalScale;
+                ctx.font = `${fontSize}px Sans-Serif`;
+
+                // Color mapping logic
+                let color = '#4da6ff'; // Default room (Blue)
+                if (node.group === 'start') color = '#4caf50'; // ##start (Green)
+                if (node.group === 'end') color = '#f44336';   // ##end (Red)
+
+                // Draw the room (circle)
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 10, 0, 2 * Math.PI, false);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // Draw the room name (text)
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'white';
+                ctx.fillText(label, node.x, node.y);
+            });
+
+            // 4. CAMERA SETUP
+            // After the graph loads, wait a tiny bit then zoom the camera out so
+            // the entire fixed map fits nicely on the screen.
+            setTimeout(() => {
+                Graph.zoomToFit(400, 50); // 400ms transition, 50px padding
+            }, 100);
+
+    </script>
+</body>
+</html>
