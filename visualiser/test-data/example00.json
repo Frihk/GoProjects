@@ -1,0 +1,13 @@
+{
+    "nodes": [
+        {"id": "0", "group": "start", "fx": 0, "fy": 3},
+        {"id": "2", "group": "room", "fx": 2, "fy": 5},
+        {"id": "3", "group": "room", "fx": 4, "fy": 0},
+        {"id": "1", "group": "end", "fx": 8, "fy": 3}
+    ],
+    "links": [
+        {"source": "0", "target": "2"},
+        {"source": "2", "target": "3"},
+        {"source": "3", "target": "1"}
+    ]
+}

@@ -1,0 +1,37 @@
+{
+    "nodes": [
+        {"id": "start", "group": "start", "fx": 1, "fy": 6},
+        {"id": "0", "group": "room", "fx": 4, "fy": 8},
+        {"id": "o", "group": "room", "fx": 6, "fy": 8},
+        {"id": "n", "group": "room", "fx": 6, "fy": 6},
+        {"id": "e", "group": "room", "fx": 8, "fy": 4},
+        {"id": "t", "group": "room", "fx": 1, "fy": 9},
+        {"id": "E", "group": "room", "fx": 5, "fy": 9},
+        {"id": "a", "group": "room", "fx": 8, "fy": 9},
+        {"id": "m", "group": "room", "fx": 8, "fy": 6},
+        {"id": "h", "group": "room", "fx": 4, "fy": 6},
+        {"id": "A", "group": "room", "fx": 5, "fy": 2},
+        {"id": "c", "group": "room", "fx": 8, "fy": 1},
+        {"id": "k", "group": "room", "fx": 11, "fy": 2},
+        {"id": "end", "group": "end", "fx": 11, "fy": 6}
+    ],
+    "links": [
+        {"source": "start", "target": "t"},
+        {"source": "n", "target": "e"},
+        {"source": "a", "target": "m"},
+        {"source": "A", "target": "c"},
+        {"source": "0", "target": "o"},
+        {"source": "E", "target": "a"},
+        {"source": "k", "target": "end"},
+        {"source": "start", "target": "h"},
+        {"source": "o", "target": "n"},
+        {"source": "m", "target": "end"},
+        {"source": "t", "target": "E"},
+        {"source": "start", "target": "0"},
+        {"source": "h", "target": "A"},
+        {"source": "e", "target": "end"},
+        {"source": "c", "target": "k"},
+        {"source": "n", "target": "m"},
+        {"source": "h", "target": "n"}
+    ]
+}
