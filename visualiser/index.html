@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0">
     <title>Lem-in Visualizer - Example 05</title>
     <script src="https://unpkg.com/force-graph"></script>
     <style>
@@ -29,33 +29,33 @@
         // 'fx' and 'fy' tell the library to fix the node permanently at this exact pixel location.
         const lemInData = {
             nodes: [
-                { id: 'start', name: 'start', group: 'start', fx: 0 * scale, fy: 3 * scale },
-                { id: 'end', name: 'end', group: 'end', fx: 10 * scale, fy: 1 * scale },
-                { id: 'C0', name: 'C0', group: 'room', fx: 1 * scale, fy: 0 * scale },
-                { id: 'C1', name: 'C1', group: 'room', fx: 2 * scale, fy: 0 * scale },
-                { id: 'C2', name: 'C2', group: 'room', fx: 3 * scale, fy: 0 * scale },
-                { id: 'C3', name: 'C3', group: 'room', fx: 4 * scale, fy: 0 * scale },
-                { id: 'I4', name: 'I4', group: 'room', fx: 5 * scale, fy: 0 * scale },
-                { id: 'I5', name: 'I5', group: 'room', fx: 6 * scale, fy: 0 * scale },
-                { id: 'A0', name: 'A0', group: 'room', fx: 1 * scale, fy: 2 * scale },
-                { id: 'A1', name: 'A1', group: 'room', fx: 2 * scale, fy: 1 * scale },
-                { id: 'A2', name: 'A2', group: 'room', fx: 4 * scale, fy: 1 * scale },
-                { id: 'B0', name: 'B0', group: 'room', fx: 1 * scale, fy: 4 * scale },
-                { id: 'B1', name: 'B1', group: 'room', fx: 2 * scale, fy: 4 * scale },
-                { id: 'E2', name: 'E2', group: 'room', fx: 6 * scale, fy: 4 * scale },
-                { id: 'D1', name: 'D1', group: 'room', fx: 6 * scale, fy: 3 * scale },
-                { id: 'D2', name: 'D2', group: 'room', fx: 7 * scale, fy: 3 * scale },
-                { id: 'D3', name: 'D3', group: 'room', fx: 8 * scale, fy: 3 * scale },
-                { id: 'H4', name: 'H4', group: 'room', fx: 4 * scale, fy: 2 * scale },
-                { id: 'H3', name: 'H3', group: 'room', fx: 5 * scale, fy: 2 * scale },
-                { id: 'F2', name: 'F2', group: 'room', fx: 6 * scale, fy: 2 * scale },
-                { id: 'F3', name: 'F3', group: 'room', fx: 7 * scale, fy: 2 * scale },
-                { id: 'F4', name: 'F4', group: 'room', fx: 8 * scale, fy: 2 * scale },
-                { id: 'G0', name: 'G0', group: 'room', fx: 1 * scale, fy: 5 * scale },
-                { id: 'G1', name: 'G1', group: 'room', fx: 2 * scale, fy: 5 * scale },
-                { id: 'G2', name: 'G2', group: 'room', fx: 3 * scale, fy: 5 * scale },
-                { id: 'G3', name: 'G3', group: 'room', fx: 4 * scale, fy: 5 * scale },
-                { id: 'G4', name: 'G4', group: 'room', fx: 6 * scale, fy: 5 * scale }
+                { id: 'start', group: 'start', fx: 0 * scale, fy: 3 * scale },
+                { id: 'end', group: 'end', fx: 10 * scale, fy: 1 * scale },
+                { id: 'C0', group: 'room', fx: 1 * scale, fy: 0 * scale },
+                { id: 'C1', group: 'room', fx: 2 * scale, fy: 0 * scale },
+                { id: 'C2', group: 'room', fx: 3 * scale, fy: 0 * scale },
+                { id: 'C3', group: 'room', fx: 4 * scale, fy: 0 * scale },
+                { id: 'I4', group: 'room', fx: 5 * scale, fy: 0 * scale },
+                { id: 'I5', group: 'room', fx: 6 * scale, fy: 0 * scale },
+                { id: 'A0', group: 'room', fx: 1 * scale, fy: 2 * scale },
+                { id: 'A1', group: 'room', fx: 2 * scale, fy: 1 * scale },
+                { id: 'A2', group: 'room', fx: 4 * scale, fy: 1 * scale },
+                { id: 'B0', group: 'room', fx: 1 * scale, fy: 4 * scale },
+                { id: 'B1', group: 'room', fx: 2 * scale, fy: 4 * scale },
+                { id: 'E2', group: 'room', fx: 6 * scale, fy: 4 * scale },
+                { id: 'D1', group: 'room', fx: 6 * scale, fy: 3 * scale },
+                { id: 'D2', group: 'room', fx: 7 * scale, fy: 3 * scale },
+                { id: 'D3', group: 'room', fx: 8 * scale, fy: 3 * scale },
+                { id: 'H4', group: 'room', fx: 4 * scale, fy: 2 * scale },
+                { id: 'H3', group: 'room', fx: 5 * scale, fy: 2 * scale },
+                { id: 'F2', group: 'room', fx: 6 * scale, fy: 2 * scale },
+                { id: 'F3', group: 'room', fx: 7 * scale, fy: 2 * scale },
+                { id: 'F4', group: 'room', fx: 8 * scale, fy: 2 * scale },
+                { id: 'G0', group: 'room', fx: 1 * scale, fy: 5 * scale },
+                { id: 'G1', group: 'room', fx: 2 * scale, fy: 5 * scale },
+                { id: 'G2', group: 'room', fx: 3 * scale, fy: 5 * scale },
+                { id: 'G3', group: 'room', fx: 4 * scale, fy: 5 * scale },
+                { id: 'G4', group: 'room', fx: 6 * scale, fy: 5 * scale }
             ],
             // Links represent the tunnels connecting the rooms.
             links: [
@@ -91,7 +91,6 @@
             // 3. CUSTOM NODE RENDERING
             // This function replaces the default dots with custom circles and text labels.
             .nodeCanvasObject((node, ctx, globalScale) => {
-                const label = node.name;
                 const fontSize = 16 / globalScale;
                 ctx.font = `${fontSize}px Sans-Serif`;
 
@@ -110,14 +109,14 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = 'white';
-                ctx.fillText(label, node.x, node.y);
+                ctx.fillText(node.id, node.x, node.y);
             });
 
             // 4. CAMERA SETUP
             // After the graph loads, wait a tiny bit then zoom the camera out so
             // the entire fixed map fits nicely on the screen.
             setTimeout(() => {
-                Graph.zoomToFit(400, 50); // 400ms transition, 50px padding
+                Graph.zoomToFit(200, 100); // 200ms transition, 100px padding
             }, 100);
 
     </script>
