@@ -1,0 +1,20 @@
+{
+    "nodes": [
+        {"id": "richard", "group": "start", "fx": 0, "fy": 6},
+        {"id": "gilfoyle", "group": "room", "fx": 6, "fy": 3},
+        {"id": "erlich", "group": "room", "fx": 9, "fy": 6},
+        {"id": "dinish", "group": "room", "fx": 6, "fy": 9},
+        {"id": "jimYoung", "group": "room", "fx": 11, "fy": 7},
+        {"id": "peter", "group": "end", "fx": 14, "fy": 6}
+    ],
+    "links": [
+        {"source": "richard", "target": "dinish"},
+        {"source": "dinish", "target": "jimYoung"},
+        {"source": "richard", "target": "gilfoyle"},
+        {"source": "gilfoyle", "target": "peter"},
+        {"source": "gilfoyle", "target": "erlich"},
+        {"source": "richard", "target": "erlich"},
+        {"source": "erlich", "target": "jimYoung"},
+        {"source": "jimYoung", "target": "peter"}
+    ]
+}
