@@ -1,0 +1,26 @@
+{
+  "name": "visualiser",
+  "version": "1.0.0",
+  "description": "Visualiser for the lem-in project",
+  "license": "ISC",
+  "author": "",
+  "main": "src/server.ts",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js",
+    "dev": "esbuild src/index.ts --bundle --outfile=dist/index.js --watch",
+    "serve": "tsx src/server.ts",
+    "start": "npm run build && tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "esbuild": "^0.25.0",
+    "prettier": "3.8.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "force-graph": "^1.51.2"
+  }
+}

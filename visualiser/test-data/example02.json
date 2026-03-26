@@ -1,0 +1,46 @@
+{
+    "nodes": [
+        {
+            "id": "0",
+            "group": "start",
+            "fx": 2,
+            "fy": 0
+        },
+        {
+            "id": "1",
+            "group": "room",
+            "fx": 4,
+            "fy": 1
+        },
+        {
+            "id": "2",
+            "group": "room",
+            "fx": 6,
+            "fy": 0
+        },
+        {
+            "id": "3",
+            "group": "end",
+            "fx": 5,
+            "fy": 3
+        }
+    ],
+    "links": [
+        {
+            "source": "0",
+            "target": "1"
+        },
+        {
+            "source": "0",
+            "target": "3"
+        },
+        {
+            "source": "1",
+            "target": "2"
+        },
+        {
+            "source": "3",
+            "target": "2"
+        }
+    ]
+}
