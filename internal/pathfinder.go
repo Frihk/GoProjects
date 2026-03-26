@@ -1,8 +1,8 @@
 package internal
 
-type empty struct{}
-
 type roomType int
+
+type empty struct{}
 
 const (
 	normal roomType = iota
