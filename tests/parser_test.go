@@ -1,6 +1,9 @@
-package internal
+package tests
 
-import "testing"
+import (
+	"testing"
+	"lem-in/internal"
+)
 
 func TestParseInput_Valid(t *testing.T) {
 	lines := []string{
@@ -17,7 +20,7 @@ func TestParseInput_Valid(t *testing.T) {
 		"L2-C",
 	}
 
-	data, err := ParseInput(lines)
+	data, err := internal.ParseInput(lines)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -28,7 +31,7 @@ func TestParseInput_Valid(t *testing.T) {
 		t.Fatalf("expected 2 tunnels, got %d", len(data.Links))
 	}
 
-	rooms := map[string]Room{}
+	rooms := map[string]internal.Room{}
 	for _, r := range data.Nodes {
 		rooms[r.ID] = r
 	}
@@ -114,7 +117,7 @@ func TestParseInput_Errors(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		_, err := ParseInput(tc.lines)
+		_, err := internal.ParseInput(tc.lines)
 		if err == nil {
 			t.Fatalf("%s: expected error, got nil", tc.name)
 		}

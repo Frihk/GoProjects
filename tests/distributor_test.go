@@ -1,8 +1,9 @@
-package internal
+package tests
 
 import (
 	"reflect"
 	"testing"
+	"lem-in/internal"
 )
 
 func TestDistributeAnts(t *testing.T) {
@@ -58,7 +59,7 @@ func TestDistributeAnts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assignments := DistributeAnts(tt.numAnts, tt.paths)
+			assignments := internal.DistributeAnts(tt.numAnts, tt.paths)
 			
 			var actual []int
 			
