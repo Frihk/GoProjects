@@ -6,66 +6,58 @@ import (
 	"lem-in/internal/list"
 )
 
-type (
-	empty     struct{}
-	roomType  int
-	linkState int8
-)
+type empty struct{}
 
 type node struct {
 	// name is the room identifier.
 	name string
-	// group is the category of the room (normal|alpha|omega).
-	group roomType
+	// twin is a duplicate of this node that is used in the residual
+	// graph of Edmond-Karp algorithm.
+	twin *node
 	// links is a map of all the rooms this node is connected to,
-	// the value indicates the accessability of the link.
-	links map[*node]linkState
+	// the value indicates the flow capacity of the link.
+	links map[*node]int
 }
 
 type graph map[string]*node
 
-const (
-	// normal is the basic room type.
-	normal roomType = iota
-	// alpha is the start room.
-	alpha
-	// omega is the end room.
-	omega
-)
+// newGraph initialises a graph from the set of rooms and tunnels.
+func newGraph(rooms []Room, tunnels []Tunnel) (start, end *node) {
+	lookup := make(graph, len(rooms))
 
-const (
-	open linkState = iota
-	closed
-)
-
-// initGraph initialises a graph from the set of rooms and tunnels.
-func initGraph(rooms []Room, tunnels []Tunnel) (start, end *node, farm graph) {
-	farm = graph{}
 	for _, r := range rooms {
-		nd := &node{name: r.ID, links: make(map[*node]linkState)}
+		nd := &node{name: r.ID, links: make(map[*node]int)}
+		twin := nd
 
 		switch r.Group {
+		// the start and end nodes are not duplicated.
 		case "start":
-			nd.group = alpha
 			start = nd
 		case "end":
-			nd.group = omega
 			end = nd
+		default:
+			twin = &node{name: r.ID, links: make(map[*node]int)}
 		}
 
-		farm[nd.name] = nd
+		nd.twin = twin
+		twin.twin = nd
+		lookup[nd.name] = nd
 	}
 
 	for _, t := range tunnels {
-		entrance := farm[t.Source]
-		exit := farm[t.Target]
+		entrance := lookup[t.Source]
+		exit := lookup[t.Target]
 
-		// links are by directional.
-		entrance.links[exit] = open
-		exit.links[entrance] = open
+		// links are bi-directional.
+		entrance.links[exit] = 1
+		exit.links[entrance] = 1
+		// the links of the residual graph have a capacity of 0 to indicate they
+		// are closed.
+		entrance.twin.links[exit.twin] = 0
+		exit.twin.links[entrance.twin] = 0
 	}
 
-	return start, end, farm
+	return start, end
 }
 
 // bfs performs a Breadth First Search on a graph for the `end` node.
@@ -77,6 +69,17 @@ func bfs(start, end *node) map[*node]*node {
 	parent := map[*node]*node{start: nil}
 	visited := map[*node]empty{start: {}}
 	queue := list.New[*node]()
+	validateAndPush := func(from, target *node, linkCapacity int) *node {
+		// skip visited rooms and rooms with closed links.
+		if _, seen := visited[target]; linkCapacity <= 0 || seen {
+			return nil
+		}
+
+		parent[target] = from
+		visited[target] = empty{}
+		queue.PushBack(target)
+		return target
+	}
 
 	queue.PushBack(start)
 outerLoop:
@@ -86,19 +89,16 @@ outerLoop:
 
 		// mark current node as visited.
 		// add all of current's neighbouring nodes to the end of the queue.
-		for neighbour, linkStatus := range current.links {
-			// skip visited rooms and rooms with closed links.
-			if _, seen := visited[neighbour]; linkStatus == closed || seen {
-				continue
-			}
-
-			parent[neighbour] = current
-			if neighbour == end {
+		for neighbour, capacity := range current.links {
+			if end == validateAndPush(current, neighbour, capacity) {
 				break outerLoop
 			}
 
-			visited[neighbour] = empty{}
-			queue.PushBack(neighbour)
+			// also add the residual edge to the queue in order to explore alternate routes.
+			capacity = current.twin.links[neighbour.twin]
+			if end == validateAndPush(current.twin, neighbour.twin, capacity) {
+				break outerLoop
+			}
 		}
 	}
 
@@ -110,15 +110,18 @@ func closeRoute(parent map[*node]*node, start, end *node) {
 	for current := end; current != start; current = parent[current] {
 		previous := parent[current]
 
-		previous.links[current] = closed
+		// close the forward edge
+		previous.links[current]--
+		// open the reverse edge
+		current.twin.links[previous.twin]++
 	}
 }
 
 // findExploredRoutes returns the set of discovered routes in a graph from
 // `start` to `end`.
 func findExploredRoutes(start, end *node) (routes [][]string) {
-	for child, linkStatus := range start.links {
-		if linkStatus == open {
+	for child, capacity := range start.links {
+		if capacity >= 1 {
 			continue
 		}
 
@@ -132,8 +135,8 @@ func findExploredRoutes(start, end *node) (routes [][]string) {
 				break
 			}
 
-			for child, linkStatus = range current.links {
-				if linkStatus == closed {
+			for child, capacity = range current.links {
+				if capacity <= 0 {
 					current = child
 					break
 				}
@@ -170,9 +173,9 @@ func sum(slc []int) int {
 }
 
 // FindPaths returns the optimal set of routes to move a given number of ants from the
-// `start` room to the `end` room.
+// `start` room to the `end` room using the Edmond-Karp algorithm.
 func FindPaths(ants int, rooms []Room, tunnels []Tunnel) (optimalRoutes [][]string) {
-	start, end, _ := initGraph(rooms, tunnels)
+	start, end := newGraph(rooms, tunnels)
 	bestTurns := math.MaxInt
 
 	for {
@@ -186,11 +189,8 @@ func FindPaths(ants int, rooms []Room, tunnels []Tunnel) (optimalRoutes [][]stri
 		closeRoute(parent, start, end)
 		routes := findExploredRoutes(start, end)
 
-		// Formula for calculating number of turns.
-		// <total turns> = ceil(
-		// 		(<number of ants> + <sum of all route lengths>) /
-		// 		<total number of routes>
-		// ) ​- 1
+		// Formula for calculating number of turns:
+		// <total turns> = ceil((<number of ants> + <sum of all route lengths>) / <total number of routes>) ​- 1
 
 		sumOfRouteLengths := sum(funcMap(routes, func(s []string) int { return len(s) }))
 		turns := ((ants + sumOfRouteLengths + len(routes) - 1) / len(routes)) - 1
