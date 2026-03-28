@@ -16,8 +16,11 @@ lem-in/
 │   └── main.go              # Entry point: reads args and orchestrates the program
 ├── internal/
 │   ├── parser.go            # Parses and validates the input file
+│   ├── pathfinder.go        # Pathfinding logic:  finds and selects optimal paths
+│   └── distributor.go       # Distribution logic: balances load of ants across paths
+├── tests/
 │   ├── parser_test.go       # Unit tests for the parser
-│   └── pathfinder.go        # Pathfinding logic:  finds and selects optimal paths
+│   └── distributor_test.go  # Unit tests for the distributor
 └── visualizer/
     └── frontend/            # Visual representation of the ant farm simulation
 ```
