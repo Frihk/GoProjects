@@ -24,6 +24,7 @@ type Tunnel struct {
 
 // GraphData is the full payload returned to the frontend.
 type GraphData struct {
+	Ants  int      `json:"ants"`
 	Nodes []Room   `json:"nodes"`
 	Links []Tunnel `json:"links"`
 }
@@ -47,6 +48,7 @@ func ParseInput(lines []string) (GraphData, error) {
 	rooms := make(map[string]Room)
 	var pendingGroup string
 	var haveStart, haveEnd bool
+	haveAntCount := false
 
 	for i, raw := range lines {
 		line := strings.TrimSpace(raw)
@@ -77,8 +79,17 @@ func ParseInput(lines []string) (GraphData, error) {
 			break
 		}
 
-		// Ant count line (first line) can be ignored.
-		if isAntCountLine(line) && len(data.Nodes) == 0 && len(data.Links) == 0 {
+		// Ant count must be the first non-comment, non-empty data line.
+		if !haveAntCount {
+			if !isAntCountLine(line) {
+				return GraphData{}, fmt.Errorf("line %d: expected ant count", i+1)
+			}
+			ants, err := strconv.Atoi(line)
+			if err != nil || ants <= 0 {
+				return GraphData{}, fmt.Errorf("line %d: invalid ant count", i+1)
+			}
+			data.Ants = ants
+			haveAntCount = true
 			continue
 		}
 
@@ -147,6 +158,9 @@ func ParseInput(lines []string) (GraphData, error) {
 
 	if pendingGroup != "" {
 		return GraphData{}, fmt.Errorf("end of input: start/end marker without a room")
+	}
+	if !haveAntCount {
+		return GraphData{}, fmt.Errorf("missing ant count")
 	}
 	if !haveStart || !haveEnd {
 		return GraphData{}, fmt.Errorf("missing ##start or ##end")

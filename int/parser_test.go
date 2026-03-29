@@ -21,6 +21,9 @@ func TestParseInput_Valid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
+	if data.Ants != 4 {
+		t.Fatalf("expected ant count 4, got %d", data.Ants)
+	}
 	if len(data.Nodes) != 3 {
 		t.Fatalf("expected 3 rooms, got %d", len(data.Nodes))
 	}
@@ -51,6 +54,27 @@ func TestParseInput_Errors(t *testing.T) {
 		name  string
 		lines []string
 	}{
+		{
+			name: "missing ant count",
+			lines: []string{
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-B",
+			},
+		},
+		{
+			name: "invalid ant count",
+			lines: []string{
+				"0",
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-B",
+			},
+		},
 		{
 			name: "missing start",
 			lines: []string{
