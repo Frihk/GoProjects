@@ -1,6 +1,9 @@
-package internal
+package tests
 
-import "testing"
+import (
+	"lem-in/internal"
+	"testing"
+)
 
 func TestParseInput_Valid(t *testing.T) {
 	lines := []string{
@@ -17,9 +20,12 @@ func TestParseInput_Valid(t *testing.T) {
 		"L2-C",
 	}
 
-	data, err := ParseInput(lines)
+	data, err := internal.ParseInput(lines)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
+	}
+	if data.Ants != 4 {
+		t.Fatalf("expected ant count 4, got %d", data.Ants)
 	}
 	if len(data.Nodes) != 3 {
 		t.Fatalf("expected 3 rooms, got %d", len(data.Nodes))
@@ -28,7 +34,7 @@ func TestParseInput_Valid(t *testing.T) {
 		t.Fatalf("expected 2 tunnels, got %d", len(data.Links))
 	}
 
-	rooms := map[string]Room{}
+	rooms := map[string]internal.Room{}
 	for _, r := range data.Nodes {
 		rooms[r.ID] = r
 	}
@@ -48,9 +54,33 @@ func TestParseInput_Valid(t *testing.T) {
 
 func TestParseInput_Errors(t *testing.T) {
 	tests := []struct {
-		name  string
-		lines []string
+		name    string
+		lines   []string
+		wantErr string
 	}{
+		{
+			name: "missing ant count",
+			lines: []string{
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-B",
+			},
+			wantErr: "ERROR: invalid data format, invalid number of ants",
+		},
+		{
+			name: "invalid ant count",
+			lines: []string{
+				"0",
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-B",
+			},
+			wantErr: "ERROR: invalid data format, invalid number of ants",
+		},
 		{
 			name: "missing start",
 			lines: []string{
@@ -60,6 +90,7 @@ func TestParseInput_Errors(t *testing.T) {
 				"B 1 1",
 				"A-B",
 			},
+			wantErr: "ERROR: invalid data format, no start room found",
 		},
 		{
 			name: "missing end",
@@ -70,10 +101,12 @@ func TestParseInput_Errors(t *testing.T) {
 				"B 1 1",
 				"A-B",
 			},
+			wantErr: "ERROR: invalid data format, no end room found",
 		},
 		{
 			name: "duplicate room",
 			lines: []string{
+				"3",
 				"##start",
 				"A 0 0",
 				"A 1 1",
@@ -81,42 +114,64 @@ func TestParseInput_Errors(t *testing.T) {
 				"B 2 2",
 				"A-B",
 			},
+			wantErr: "ERROR: invalid data format, duplicate room \"A\"",
 		},
 		{
 			name: "unknown link",
 			lines: []string{
+				"3",
 				"##start",
 				"A 0 0",
 				"##end",
 				"C 2 2",
 				"A-B",
 			},
+			wantErr: "ERROR: invalid data format, link to unknown room \"B\"",
 		},
 		{
 			name: "invalid coordinates",
 			lines: []string{
+				"3",
 				"##start",
 				"A x 0",
 				"##end",
 				"B 1 1",
 			},
+			wantErr: "ERROR: invalid data format, invalid room coordinates",
 		},
 		{
 			name: "invalid format",
 			lines: []string{
+				"3",
 				"##start",
 				"A 0 0",
 				"##end",
 				"B 1 1",
 				"A 1",
 			},
+			wantErr: "ERROR: invalid data format, invalid format",
+		},
+		{
+			name: "self link",
+			lines: []string{
+				"3",
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-A",
+			},
+			wantErr: "ERROR: invalid data format, room \"A\" links to itself",
 		},
 	}
 
 	for _, tc := range tests {
-		_, err := ParseInput(tc.lines)
+		_, err := internal.ParseInput(tc.lines)
 		if err == nil {
 			t.Fatalf("%s: expected error, got nil", tc.name)
+		}
+		if err.Error() != tc.wantErr {
+			t.Fatalf("%s: expected %q, got %q", tc.name, tc.wantErr, err.Error())
 		}
 	}
 }

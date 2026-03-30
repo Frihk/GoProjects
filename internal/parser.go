@@ -24,6 +24,7 @@ type Tunnel struct {
 
 // GraphData is the full payload returned to the frontend.
 type GraphData struct {
+	Ants  int      `json:"ants"`
 	Nodes []Room   `json:"nodes"`
 	Links []Tunnel `json:"links"`
 }
@@ -47,8 +48,9 @@ func ParseInput(lines []string) (GraphData, error) {
 	rooms := make(map[string]Room)
 	var pendingGroup string
 	var haveStart, haveEnd bool
+	haveAntCount := false
 
-	for i, raw := range lines {
+	for _, raw := range lines {
 		line := strings.TrimSpace(raw)
 		if line == "" {
 			continue
@@ -58,12 +60,12 @@ func ParseInput(lines []string) (GraphData, error) {
 			switch line {
 			case "##start":
 				if pendingGroup != "" {
-					return GraphData{}, fmt.Errorf("line %d: multiple start/end markers without a room", i+1)
+					return GraphData{}, invalidDataError("multiple start/end markers without a room")
 				}
 				pendingGroup = "start"
 			case "##end":
 				if pendingGroup != "" {
-					return GraphData{}, fmt.Errorf("line %d: multiple start/end markers without a room", i+1)
+					return GraphData{}, invalidDataError("multiple start/end markers without a room")
 				}
 				pendingGroup = "end"
 			default:
@@ -77,8 +79,17 @@ func ParseInput(lines []string) (GraphData, error) {
 			break
 		}
 
-		// Ant count line (first line) can be ignored.
-		if isAntCountLine(line) && len(data.Nodes) == 0 && len(data.Links) == 0 {
+		// Ant count must be the first non-comment, non-empty data line.
+		if !haveAntCount {
+			if !isAntCountLine(line) {
+				return GraphData{}, invalidDataError("invalid number of ants")
+			}
+			ants, err := strconv.Atoi(line)
+			if err != nil || ants <= 0 {
+				return GraphData{}, invalidDataError("invalid number of ants")
+			}
+			data.Ants = ants
+			haveAntCount = true
 			continue
 		}
 
@@ -87,15 +98,15 @@ func ParseInput(lines []string) (GraphData, error) {
 			name := fields[0]
 			x, err := strconv.Atoi(fields[1])
 			if err != nil {
-				return GraphData{}, fmt.Errorf("line %d: invalid x coordinate", i+1)
+				return GraphData{}, invalidDataError("invalid room coordinates")
 			}
 			y, err := strconv.Atoi(fields[2])
 			if err != nil {
-				return GraphData{}, fmt.Errorf("line %d: invalid y coordinate", i+1)
+				return GraphData{}, invalidDataError("invalid room coordinates")
 			}
 
 			if _, exists := rooms[name]; exists {
-				return GraphData{}, fmt.Errorf("line %d: duplicate room %q", i+1, name)
+				return GraphData{}, invalidDataError(fmt.Sprintf("duplicate room %q", name))
 			}
 
 			group := "room"
@@ -105,12 +116,12 @@ func ParseInput(lines []string) (GraphData, error) {
 				switch group {
 				case "start":
 					if haveStart {
-						return GraphData{}, fmt.Errorf("line %d: duplicate start room", i+1)
+						return GraphData{}, invalidDataError("duplicate start room")
 					}
 					haveStart = true
 				case "end":
 					if haveEnd {
-						return GraphData{}, fmt.Errorf("line %d: duplicate end room", i+1)
+						return GraphData{}, invalidDataError("duplicate end room")
 					}
 					haveEnd = true
 				}
@@ -123,36 +134,49 @@ func ParseInput(lines []string) (GraphData, error) {
 		}
 
 		if pendingGroup != "" {
-			return GraphData{}, fmt.Errorf("line %d: start/end marker must be followed by a room", i+1)
+			return GraphData{}, invalidDataError("start/end marker must be followed by a room")
 		}
 
 		if isTunnelLine(line) {
 			parts := strings.Split(line, "-")
 			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-				return GraphData{}, fmt.Errorf("line %d: invalid tunnel format", i+1)
+				return GraphData{}, invalidDataError("invalid tunnel format")
 			}
 			src, dst := parts[0], parts[1]
 			if _, ok := rooms[src]; !ok {
-				return GraphData{}, fmt.Errorf("line %d: link to unknown room %q", i+1, src)
+				return GraphData{}, invalidDataError(fmt.Sprintf("link to unknown room %q", src))
 			}
 			if _, ok := rooms[dst]; !ok {
-				return GraphData{}, fmt.Errorf("line %d: link to unknown room %q", i+1, dst)
+				return GraphData{}, invalidDataError(fmt.Sprintf("link to unknown room %q", dst))
+			}
+			if src == dst {
+				return GraphData{}, invalidDataError(fmt.Sprintf("room %q links to itself", src))
 			}
 			data.Links = append(data.Links, Tunnel{Source: src, Target: dst})
 			continue
 		}
 
-		return GraphData{}, fmt.Errorf("line %d: invalid format", i+1)
+		return GraphData{}, invalidDataError("invalid format")
 	}
 
 	if pendingGroup != "" {
-		return GraphData{}, fmt.Errorf("end of input: start/end marker without a room")
+		return GraphData{}, invalidDataError("start/end marker without a room")
 	}
-	if !haveStart || !haveEnd {
-		return GraphData{}, fmt.Errorf("missing ##start or ##end")
+	if !haveAntCount {
+		return GraphData{}, invalidDataError("invalid number of ants")
+	}
+	if !haveStart {
+		return GraphData{}, invalidDataError("no start room found")
+	}
+	if !haveEnd {
+		return GraphData{}, invalidDataError("no end room found")
 	}
 
 	return data, nil
+}
+
+func invalidDataError(reason string) error {
+	return fmt.Errorf("ERROR: invalid data format, %s", reason)
 }
 
 func isRoomLine(line string) bool {
