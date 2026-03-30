@@ -33,7 +33,7 @@ func calculateTurns(ants int, routes [][]string) int {
 
 	sumOfRouteLengths := 0
 	for _, route := range routes {
-		sumOfRouteLengths += len(route)
+		sumOfRouteLengths += len(route) - 1
 	}
 
 	// Integer ceiling division: (a + b - 1) / b
@@ -115,9 +115,6 @@ func TestFindPaths_AuditExamples(t *testing.T) {
 					"Route details: %v",
 					tt.description, tt.maxTurns, turns, len(routes), routes)
 			}
-
-			t.Logf("✓ %s: %d ants completed in %d turns using %d route(s) (max allowed: %d)",
-				tt.description, tt.ants, turns, len(routes), tt.maxTurns)
 		})
 	}
 }
@@ -194,8 +191,6 @@ func TestFindPaths_GreedyShortcutTrap(t *testing.T) {
 			"A proper Edmonds-Karp implementation should find the top and bottom paths.",
 			len(routes), routes)
 	}
-
-	t.Logf("✓ Greedy Shortcut Trap: %d ants completed in %d turns using %d route(s)", ants, turns, len(routes))
 }
 
 // TestFindPaths_VertexDisjointFlaw tests if the algorithm properly enforces vertex-disjointness.
@@ -263,11 +258,9 @@ func TestFindPaths_VertexDisjointFlaw(t *testing.T) {
 	// Path 2: start -> C -> B -> end
 	expectedRoutes := 2
 	if len(routes) != expectedRoutes {
-		t.Logf("Warning: Expected %d vertex-disjoint routes, found %d. Routes: %v",
+		t.Errorf("Expected %d vertex-disjoint routes, found %d. Routes: %v",
 			expectedRoutes, len(routes), routes)
 	}
-
-	t.Logf("✓ Vertex-Disjoint Flaw Test: Found %d route(s), all with unique intermediate rooms", len(routes))
 }
 
 // TestFindPaths_ResidualEdgeReversal tests if the algorithm properly uses residual edges.
@@ -344,9 +337,6 @@ func TestFindPaths_ResidualEdgeReversal(t *testing.T) {
 			}
 		}
 	}
-
-	turns := calculateTurns(ants, routes)
-	t.Logf("✓ Residual Edge Reversal: %d ants completed in %d turns using %d route(s)", ants, turns, len(routes))
 }
 
 // TestFindPaths_SinglePath tests a trivial case with only one possible path.
@@ -377,12 +367,10 @@ func TestFindPaths_SinglePath(t *testing.T) {
 	}
 
 	turns := calculateTurns(ants, routes)
-	expectedTurns := 7 // Formula: ((5 + 3 + 1 - 1) / 1) - 1 = 7
+	expectedTurns := 6 // Formula: ((5 + 2 + 1 - 1) / 1) - 1 = 6
 	if turns != expectedTurns {
 		t.Errorf("Expected %d turns, got %d", expectedTurns, turns)
 	}
-
-	t.Logf("✓ Single Path: %d ants completed in %d turns", ants, turns)
 }
 
 // TestFindPaths_NoPath tests error handling when no path exists.
@@ -405,6 +393,4 @@ func TestFindPaths_NoPath(t *testing.T) {
 	if len(routes) != 0 {
 		t.Errorf("Expected 0 routes when no path exists, found %d routes: %v", len(routes), routes)
 	}
-
-	t.Logf("✓ No Path: Correctly returned 0 routes")
 }
