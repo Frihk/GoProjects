@@ -1,4 +1,4 @@
-package int
+package internal
 
 import (
 	// "bufio"
