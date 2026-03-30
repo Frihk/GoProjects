@@ -9,9 +9,6 @@ interface AntFarmData extends GraphData {
   links: LinkObject[];
 }
 
-// Raw fx/fy values in test data are grid units; scale them for visible spacing.
-const scale = 60;
-
 const elem = document.getElementById("graph-container") as HTMLElement;
 
 const Graph = new ForceGraph<AntRoom>(elem)
@@ -40,6 +37,9 @@ const Graph = new ForceGraph<AntRoom>(elem)
     ctx.fillText(node.id as string, node.x!, node.y!);
   });
 
+// Raw fx/fy values in test data are grid units; scale them for visible spacing.
+const scale = 50;
+
 fetch("/data")
   .then((response) => response.json())
   .then((data: AntFarmData) => {
@@ -47,8 +47,6 @@ fetch("/data")
       ...data,
       nodes: data.nodes.map((node) => ({
         ...node,
-        x: typeof node.fx === "number" ? node.fx * scale : node.x,
-        y: typeof node.fy === "number" ? node.fy * scale : node.y,
         fx: typeof node.fx === "number" ? node.fx * scale : node.fx,
         fy: typeof node.fy === "number" ? node.fy * scale : node.fy,
       })),
