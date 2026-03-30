@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"lem-in/int"
+	"lem-in/internal"
 )
 
 func main() {
