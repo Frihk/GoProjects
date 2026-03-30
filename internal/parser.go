@@ -46,6 +46,7 @@ func ReadAllLines(r io.Reader) ([]string, error) {
 func ParseInput(lines []string) (GraphData, error) {
 	var data GraphData
 	rooms := make(map[string]Room)
+	seenTunnels := make(map[string]struct{})
 	var pendingGroup string
 	var haveStart, haveEnd bool
 	haveAntCount := false
@@ -152,6 +153,11 @@ func ParseInput(lines []string) (GraphData, error) {
 			if src == dst {
 				return GraphData{}, invalidDataError(fmt.Sprintf("room %q links to itself", src))
 			}
+			tunnelKey := normalizeTunnel(src, dst)
+			if _, exists := seenTunnels[tunnelKey]; exists {
+				return GraphData{}, invalidDataError(fmt.Sprintf("duplicate tunnel between %q and %q", src, dst))
+			}
+			seenTunnels[tunnelKey] = struct{}{}
 			data.Links = append(data.Links, Tunnel{Source: src, Target: dst})
 			continue
 		}
@@ -177,6 +183,13 @@ func ParseInput(lines []string) (GraphData, error) {
 
 func invalidDataError(reason string) error {
 	return fmt.Errorf("ERROR: invalid data format, %s", reason)
+}
+
+func normalizeTunnel(src, dst string) string {
+	if src > dst {
+		src, dst = dst, src
+	}
+	return src + "-" + dst
 }
 
 func isRoomLine(line string) bool {
