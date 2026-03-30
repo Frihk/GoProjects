@@ -19,8 +19,8 @@
 #another comment
 4-2
 2-1
-# unknown room
-7-h
+7-2
+# duplicate link
 7-2
 7-4
 6-5
