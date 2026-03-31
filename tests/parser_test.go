@@ -163,6 +163,32 @@ func TestParseInput_Errors(t *testing.T) {
 			},
 			wantErr: "ERROR: invalid data format, room \"A\" links to itself",
 		},
+		{
+			name: "duplicate tunnel same direction",
+			lines: []string{
+				"3",
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-B",
+				"A-B",
+			},
+			wantErr: "ERROR: invalid data format, duplicate tunnel between \"A\" and \"B\"",
+		},
+		{
+			name: "duplicate tunnel reverse direction",
+			lines: []string{
+				"3",
+				"##start",
+				"A 0 0",
+				"##end",
+				"B 1 1",
+				"A-B",
+				"B-A",
+			},
+			wantErr: "ERROR: invalid data format, duplicate tunnel between \"B\" and \"A\"",
+		},
 	}
 
 	for _, tc := range tests {
