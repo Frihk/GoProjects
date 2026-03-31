@@ -33,7 +33,7 @@ func calculateTurns(ants int, routes [][]string) int {
 
 	sumOfRouteLengths := 0
 	for _, route := range routes {
-		sumOfRouteLengths += len(route) - 1
+		sumOfRouteLengths += len(route)
 	}
 
 	// Integer ceiling division: (a + b - 1) / b
@@ -359,7 +359,7 @@ func TestFindPaths_SinglePath(t *testing.T) {
 		t.Errorf("Expected exactly 1 route, found %d", len(routes))
 	}
 
-	expectedRoute := []string{"start", "A", "end"}
+	expectedRoute := []string{"A", "end"}
 	if len(routes) > 0 {
 		if len(routes[0]) != len(expectedRoute) {
 			t.Errorf("Expected route length %d, got %d. Route: %v", len(expectedRoute), len(routes[0]), routes[0])

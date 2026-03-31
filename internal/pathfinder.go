@@ -213,9 +213,5 @@ func FindPaths(ants int, rooms []Room, tunnels []Tunnel) [][]string {
 		}
 	}
 
-	for i, route := range optimalRoutes {
-		optimalRoutes[i] = append([]string{start.name}, route...)
-	}
-
 	return optimalRoutes
 }
