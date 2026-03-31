@@ -35,4 +35,8 @@ _To be added._
 
 ## Features & Algorithms
 
-_To be added._
+### Breadth-First Search (BFS) Pathfinding
+The program uses a **Breadth-First Search (BFS)** algorithm to traverse the network of rooms and tunnels. It systematically explores the graph level by level to identify the shortest and most optimal paths from the `##start` room to the `##end` room, ensuring that disjoint paths are selected to prevent traffic jams.
+
+### Ant Distribution & Load Balancing
+To determine which path an ant should take, the program calculates the relative "cost" (arrival delay) of each path as `Length of Path + Ants Assigned To Path So Far`. For every ant, it evaluates all available disjoint paths and directs the ant down the one that yields the lowest cost. If a shorter path becomes overcrowded with queued ants, the algorithm naturally starts spilling ants over into longer paths, ensuring optimal efficiency overall.
