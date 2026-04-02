@@ -26,11 +26,15 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
+	// 🔥 Find paths using your algorithm
 	paths := internal.FindPaths(data.Ants, data.Nodes, data.Links)
 
 	if len(paths) == 0 {
 		fmt.Println("No valid paths found")
 		return
 	}
+
+	// 🔥 Run simulation
 	internal.Simulate(data.Ants, paths, "start", "end")
 }
