@@ -31,3 +31,4 @@ func main() {
 	fmt.Printf("Rooms: %+v\n", data.Nodes)
 	fmt.Printf("Links: %+v\n", data.Links)
 }
+
