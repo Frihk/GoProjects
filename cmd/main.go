@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("tests/parser_example.txt")
+	f, err := os.Open("../tests/parser_example.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
