@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("tests/parser_example.txt")
+	f, err := os.Open("../tests/parser_example.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -26,8 +26,11 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	paths := internal.FindPaths(data.Ants, data.Nodes, data.Links)
 
-	fmt.Printf("Ants: %d\n", data.Ants)
-	fmt.Printf("Rooms: %+v\n", data.Nodes)
-	fmt.Printf("Links: %+v\n", data.Links)
+	if len(paths) == 0 {
+		fmt.Println("No valid paths found")
+		return
+	}
+	internal.Simulate(data.Ants, paths, "start", "end")
 }
