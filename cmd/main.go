@@ -34,7 +34,5 @@ func main() {
 		fmt.Println("No valid paths found")
 		return
 	}
-
-	// 🔥 Run simulation
 	internal.Simulate(data.Ants, paths, "start", "end")
 }
