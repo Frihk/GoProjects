@@ -1,9 +1,8 @@
-package tests
+package internal
 
 import (
 	"reflect"
 	"testing"
-	"lem-in/internal"
 )
 
 func TestDistributeAnts(t *testing.T) {
@@ -59,21 +58,21 @@ func TestDistributeAnts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assignments := internal.DistributeAnts(tt.numAnts, tt.paths)
-			
+			assignments := DistributeAnts(tt.numAnts, tt.paths)
+
 			var actual []int
-			
+
 			if len(tt.paths) == 0 {
 				if len(assignments) != 0 {
 					t.Fatalf("Expected empty output for no paths, got %v", assignments)
 				}
 				return
 			}
-			
+
 			if assignments == nil && len(tt.paths) > 0 {
 				t.Fatalf("DistributeAnts returned nil but expected %v", tt.expected)
 			}
-			
+
 			for _, expPath := range tt.paths {
 				found := false
 				for _, a := range assignments {

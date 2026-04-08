@@ -8,16 +8,12 @@ import (
 )
 
 func main() {
-<<<<<<< HEAD
-	if len(os.Args) != 2 { 
+	if len(os.Args) != 2 {
 		fmt.Println("ERROR: No input file provided")
 	}
 
 	filename := os.Args[1]
 	f, err := os.Open(filename)
-=======
-	f, err := os.Open("../tests/parser_example.txt")
->>>>>>> main
 	if err != nil {
 		fmt.Println(err)
 		return
