@@ -12,25 +12,22 @@ func DistributeAnts(numAnts int, paths [][]string) []PathAssignment {
 
 	assignments := make([]PathAssignment, len(paths))
 	for i, p := range paths {
-		assignments[i] = PathAssignment{
-			Path: p,
-			Ants: 0,
-		}
+		assignments[i] = PathAssignment{Path: p, Ants: 0}
 	}
 
-	for i := 0; i < numAnts; i++ {
-		best := 0
+	for ant := 0; ant < numAnts; ant++ {
+		bestPathIdx := 0
+		bestArrivalCost := len(paths[0]) + assignments[0].Ants
 
-		for j := 1; j < len(assignments); j++ {
-			costBest := len(assignments[best].Path) + assignments[best].Ants
-			costJ := len(assignments[j].Path) + assignments[j].Ants
-
-			if costJ < costBest {
-				best = j
+		for i := 1; i < len(paths); i++ {
+			arrivalCost := len(paths[i]) + assignments[i].Ants
+			if arrivalCost < bestArrivalCost {
+				bestArrivalCost = arrivalCost
+				bestPathIdx = i
 			}
 		}
 
-		assignments[best].Ants++
+		assignments[bestPathIdx].Ants++
 	}
 
 	return assignments
