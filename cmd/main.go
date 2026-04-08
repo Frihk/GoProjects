@@ -8,7 +8,12 @@ import (
 )
 
 func main() {
-	f, err := os.Open("../tests/parser_example.txt")
+	if len(os.Args) != 2 { 
+		fmt.Println("ERROR: No input file provided")
+	}
+
+	filename := os.Args[1]
+	f, err := os.Open(filename)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -16,6 +21,12 @@ func main() {
 	defer f.Close()
 
 	lines, err := internal.ReadAllLines(f)
+	for _, l := range lines {
+		fmt.Println(l)
+	}
+
+	fmt.Println()
+
 	if err != nil {
 		fmt.Println(err)
 		return
