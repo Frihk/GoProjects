@@ -8,7 +8,16 @@ import (
 )
 
 func main() {
-	f, err := os.Open("tests/parser_example.txt")
+<<<<<<< HEAD
+	if len(os.Args) != 2 { 
+		fmt.Println("ERROR: No input file provided")
+	}
+
+	filename := os.Args[1]
+	f, err := os.Open(filename)
+=======
+	f, err := os.Open("../tests/parser_example.txt")
+>>>>>>> main
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -16,6 +25,12 @@ func main() {
 	defer f.Close()
 
 	lines, err := internal.ReadAllLines(f)
+	for _, l := range lines {
+		fmt.Println(l)
+	}
+
+	fmt.Println()
+
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -27,7 +42,12 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Ants: %d\n", data.Ants)
-	fmt.Printf("Rooms: %+v\n", data.Nodes)
-	fmt.Printf("Links: %+v\n", data.Links)
+	// 🔥 Find paths using your algorithm
+	paths := internal.FindPaths(data.Ants, data.Nodes, data.Links)
+
+	if len(paths) == 0 {
+		fmt.Println("No valid paths found")
+		return
+	}
+	internal.Simulate(data.Ants, paths, "start", "0")
 }
