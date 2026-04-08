@@ -45,5 +45,5 @@ func main() {
 		fmt.Println("No valid paths found")
 		return
 	}
-	internal.Simulate(data.Ants, paths, "start", "end")
+	internal.Simulate(data.Ants, paths, "start", "0")
 }
