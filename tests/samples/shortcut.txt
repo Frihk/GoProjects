@@ -19,9 +19,19 @@
 start 0 2
 A 2 4
 C 4 0
-X 8 4 
+X 8 4
 Y 8 0
 B 10 4
 D 10 0
 ##end
 end 12 2
+# TUNNELS
+start-A
+start-C
+A-X
+X-B
+B-end
+C-Y
+Y-D
+D-end
+A-D

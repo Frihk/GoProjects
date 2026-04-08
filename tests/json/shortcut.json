@@ -1,0 +1,91 @@
+{
+    "ants": 10,
+    "nodes": [
+        {
+            "id": "start",
+            "group": "start",
+            "fx": 0,
+            "fy": 2
+        },
+        {
+            "id": "A",
+            "group": "room",
+            "fx": 2,
+            "fy": 4
+        },
+        {
+            "id": "C",
+            "group": "room",
+            "fx": 4,
+            "fy": 0
+        },
+        {
+            "id": "X",
+            "group": "room",
+            "fx": 8,
+            "fy": 4
+        },
+        {
+            "id": "Y",
+            "group": "room",
+            "fx": 8,
+            "fy": 0
+        },
+        {
+            "id": "B",
+            "group": "room",
+            "fx": 10,
+            "fy": 4
+        },
+        {
+            "id": "D",
+            "group": "room",
+            "fx": 10,
+            "fy": 0
+        },
+        {
+            "id": "end",
+            "group": "end",
+            "fx": 12,
+            "fy": 2
+        }
+    ],
+    "links": [
+        {
+            "source": "start",
+            "target": "A"
+        },
+        {
+            "source": "start",
+            "target": "C"
+        },
+        {
+            "source": "A",
+            "target": "X"
+        },
+        {
+            "source": "X",
+            "target": "B"
+        },
+        {
+            "source": "B",
+            "target": "end"
+        },
+        {
+            "source": "C",
+            "target": "Y"
+        },
+        {
+            "source": "Y",
+            "target": "D"
+        },
+        {
+            "source": "D",
+            "target": "end"
+        },
+        {
+            "source": "A",
+            "target": "D"
+        }
+    ]
+}

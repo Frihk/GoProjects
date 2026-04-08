@@ -1,0 +1,75 @@
+{
+    "ants": 4,
+    "nodes": [
+        {
+            "id": "start",
+            "group": "start",
+            "fx": 0,
+            "fy": 4
+        },
+        {
+            "id": "A",
+            "group": "room",
+            "fx": 2,
+            "fy": 6
+        },
+        {
+            "id": "C",
+            "group": "room",
+            "fx": 2,
+            "fy": 2
+        },
+        {
+            "id": "B",
+            "group": "room",
+            "fx": 4,
+            "fy": 0
+        },
+        {
+            "id": "bottleneck",
+            "group": "room",
+            "fx": 6,
+            "fy": 4
+        },
+        {
+            "id": "end",
+            "group": "end",
+            "fx": 8,
+            "fy": 4
+        }
+    ],
+    "links": [
+        {
+            "source": "start",
+            "target": "A"
+        },
+        {
+            "source": "start",
+            "target": "bottleneck"
+        },
+        {
+            "source": "start",
+            "target": "C"
+        },
+        {
+            "source": "A",
+            "target": "bottleneck"
+        },
+        {
+            "source": "C",
+            "target": "bottleneck"
+        },
+        {
+            "source": "C",
+            "target": "B"
+        },
+        {
+            "source": "bottleneck",
+            "target": "end"
+        },
+        {
+            "source": "B",
+            "target": "end"
+        }
+    ]
+}

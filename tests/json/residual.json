@@ -1,0 +1,161 @@
+{
+    "ants": 13,
+    "nodes": [
+        {
+            "id": "start",
+            "group": "start",
+            "fx": 0,
+            "fy": 4
+        },
+        {
+            "id": "A",
+            "group": "room",
+            "fx": 4,
+            "fy": 8
+        },
+        {
+            "id": "B",
+            "group": "room",
+            "fx": 2,
+            "fy": 6
+        },
+        {
+            "id": "junction",
+            "group": "room",
+            "fx": 4,
+            "fy": 4
+        },
+        {
+            "id": "C",
+            "group": "room",
+            "fx": 2,
+            "fy": 2
+        },
+        {
+            "id": "D",
+            "group": "room",
+            "fx": 4,
+            "fy": 0
+        },
+        {
+            "id": "E",
+            "group": "room",
+            "fx": 8,
+            "fy": 8
+        },
+        {
+            "id": "F",
+            "group": "room",
+            "fx": 6,
+            "fy": 6
+        },
+        {
+            "id": "G",
+            "group": "room",
+            "fx": 6,
+            "fy": 2
+        },
+        {
+            "id": "H",
+            "group": "room",
+            "fx": 8,
+            "fy": 0
+        },
+        {
+            "id": "I",
+            "group": "room",
+            "fx": 10,
+            "fy": 6
+        },
+        {
+            "id": "J",
+            "group": "room",
+            "fx": 10,
+            "fy": 2
+        },
+        {
+            "id": "end",
+            "group": "end",
+            "fx": 10,
+            "fy": 4
+        }
+    ],
+    "links": [
+        {
+            "source": "start",
+            "target": "A"
+        },
+        {
+            "source": "start",
+            "target": "B"
+        },
+        {
+            "source": "start",
+            "target": "C"
+        },
+        {
+            "source": "start",
+            "target": "D"
+        },
+        {
+            "source": "A",
+            "target": "E"
+        },
+        {
+            "source": "A",
+            "target": "junction"
+        },
+        {
+            "source": "B",
+            "target": "F"
+        },
+        {
+            "source": "B",
+            "target": "junction"
+        },
+        {
+            "source": "C",
+            "target": "G"
+        },
+        {
+            "source": "C",
+            "target": "junction"
+        },
+        {
+            "source": "D",
+            "target": "H"
+        },
+        {
+            "source": "D",
+            "target": "junction"
+        },
+        {
+            "source": "E",
+            "target": "I"
+        },
+        {
+            "source": "F",
+            "target": "end"
+        },
+        {
+            "source": "junction",
+            "target": "end"
+        },
+        {
+            "source": "G",
+            "target": "end"
+        },
+        {
+            "source": "H",
+            "target": "J"
+        },
+        {
+            "source": "I",
+            "target": "end"
+        },
+        {
+            "source": "J",
+            "target": "end"
+        }
+    ]
+}
