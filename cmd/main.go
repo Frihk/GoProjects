@@ -9,13 +9,14 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Println("ERROR: No input file provided")
+		fmt.Fprintln(os.Stderr, "ERROR: No input file provided")
+		os.Exit(1)
 	}
 
 	filename := os.Args[1]
 	f, err := os.Open(filename)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		return
 	}
 	defer f.Close()
@@ -28,13 +29,13 @@ func main() {
 	fmt.Println()
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		return
 	}
 
 	data, err := internal.ParseInput(lines)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		return
 	}
 
@@ -42,7 +43,7 @@ func main() {
 	paths := internal.FindPaths(data.Ants, data.Nodes, data.Links)
 
 	if len(paths) == 0 {
-		fmt.Println("No valid paths found")
+		fmt.Fprintln(os.Stderr, "No valid paths found")
 		return
 	}
 	internal.Simulate(data.Ants, paths, "start", "0")

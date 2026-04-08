@@ -27,19 +27,19 @@ func readStdin() ([]string, error) {
 func main() {
 	lines, err := readStdin()
 	if err != nil {
-		fmt.Println("Error reading from stdin:", err)
+		fmt.Fprintln(os.Stderr, "Error reading from stdin:", err)
 		os.Exit(1)
 	}
 
 	graphData, err := internal.ParseInput(lines)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
 	graphDataAsJson, err := json.Marshal(graphData)
 	if err != nil {
-		fmt.Println("ERROR: could not convert to json:", err)
+		fmt.Fprintln(os.Stderr, "ERROR: could not convert to json:", err)
 		os.Exit(1)
 	}
 
@@ -52,12 +52,12 @@ func main() {
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("front-end/dist"))))
 	http.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write(graphDataAsJson); err != nil {
-			fmt.Println("ERROR: error writing response")
+			fmt.Fprintln(os.Stderr, "ERROR: error writing response")
 		}
 	})
 
 	fmt.Printf("Server started at http://localhost:%s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		fmt.Println("Server error:", err)
+		fmt.Fprintln(os.Stderr, "Server error:", err)
 	}
 }
