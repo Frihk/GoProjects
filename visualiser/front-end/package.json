@@ -8,8 +8,7 @@
   "scripts": {
     "build": "esbuild src/index.ts --bundle --outfile=dist/index.js",
     "dev": "esbuild src/index.ts --bundle --outfile=dist/index.js --watch",
-    "serve": "tsx src/server.ts",
-    "start": "npm run build && tsx src/server.ts",
+    "start": "npm run build && go run src/server.go",
     "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
