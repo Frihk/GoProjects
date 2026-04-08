@@ -48,8 +48,8 @@ func main() {
 		port = p
 	}
 
-	http.Handle("/", http.FileServer(http.Dir("visualiser/front-end/public")))
-	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("visualiser/front-end/dist"))))
+	http.Handle("/", http.FileServer(http.Dir("front-end/public")))
+	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("front-end/dist"))))
 	http.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write(graphDataAsJson); err != nil {
 			fmt.Println("ERROR: error writing response")
