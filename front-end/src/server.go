@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,9 +11,8 @@ import (
 	"lem-in/internal"
 )
 
-func readStdin() ([]string, error) {
+func readLines(scanner *bufio.Scanner) ([]string, error) {
 	lines := []string{}
-	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("Enter text (Ctrl+D to finish):")
 	for scanner.Scan() {
@@ -25,9 +25,34 @@ func readStdin() ([]string, error) {
 }
 
 func main() {
-	lines, err := readStdin()
+	var port int
+
+	flag.IntVar(&port, "port", 3000, "Port to serve on")
+	flag.Parse()
+
+	var lines []string
+	var err error
+
+	if len(flag.Args()) < 1 {
+		lines, err = readLines(bufio.NewScanner(os.Stdin))
+	} else {
+		filename := flag.Arg(0)
+		file, err := os.Open(filename)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR: could not open file %q: %e\n", filename, err)
+			os.Exit(1)
+		}
+		defer file.Close()
+
+		lines, err = readLines(bufio.NewScanner(file))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR: could not read file %q: %e\n", filename, err)
+			os.Exit(1)
+		}
+	}
+
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error reading from stdin:", err)
+		fmt.Fprintf(os.Stderr, "ERROR: could not read data: %e\n", err)
 		os.Exit(1)
 	}
 
@@ -43,11 +68,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	port := "3000"
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
-	}
-
 	http.Handle("/", http.FileServer(http.Dir("front-end/public")))
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("front-end/dist"))))
 	http.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
@@ -56,8 +76,8 @@ func main() {
 		}
 	})
 
-	fmt.Printf("Server started at http://localhost:%s\n", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		fmt.Fprintln(os.Stderr, "Server error:", err)
+	fmt.Printf("Visualizer ready at http://localhost:%d\n", port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+		fmt.Fprintln(os.Stderr, "ERROR:", err)
 	}
 }

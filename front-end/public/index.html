@@ -3,11 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lem-in Visualizer</title>
+    <title>Lem-in / Visualizer</title>
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/index.css" />
   </head>
   <body>
+    <!-- Main Graph Canvas -->
     <div id="graph-container"></div>
-    <script src="/dist/index.js"></script>
+
+    <!-- HUD Overlay -->
+    <div id="dashboard">
+      <div class="stat-card">
+        <span class="label">Ants Total</span>
+        <span id="stat-total" class="value">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Arrived</span>
+        <span id="stat-arrived" class="value">0</span>
+      </div>
+      <div class="stat-card highlight">
+        <span class="label">Turn</span>
+        <span id="turn-display" class="value">0</span>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+
+    <!-- Command Center -->
+    <div id="command-center">
+      <button id="btn-play" title="Play / Pause">
+        <i data-lucide="play"></i>
+      </button>
+      <button id="btn-step" title="Next Turn">
+        <i data-lucide="skip-forward"></i>
+      </button>
+      <button id="btn-reset" title="Reset Simulation">
+        <i data-lucide="rotate-ccw"></i>
+      </button>
+    </div>
+
+    <script src="//unpkg.com/force-graph"></script>
+    <script src="/index.js"></script>
+    <script>
+      // Initialize icons
+      lucide.createIcons();
+    </script>
   </body>
 </html>

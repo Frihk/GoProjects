@@ -22,12 +22,6 @@ func main() {
 	defer f.Close()
 
 	lines, err := internal.ReadAllLines(f)
-	for _, l := range lines {
-		fmt.Println(l)
-	}
-
-	fmt.Println()
-
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return

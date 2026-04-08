@@ -51,6 +51,7 @@ func Simulate(ants int, paths [][]string, endRoom string) {
 					capacity[room]++
 				}
 
+				// Move to next room
 				ant.Position++
 				moves = append(moves, fmt.Sprintf("L%d-%s", ant.ID, room))
 			}
