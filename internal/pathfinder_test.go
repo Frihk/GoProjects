@@ -10,8 +10,7 @@ import (
 
 // loadJSONTestCase loads a JSON file and parses it into Room and Tunnel slices.
 func loadJSONTestCase(filename string) ([]Room, []Tunnel, error) {
-	path := filepath.Join("..", "tests", "data", filename)
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
@@ -50,53 +49,17 @@ func TestFindPaths_AuditExamples(t *testing.T) {
 		maxTurns    int
 		description string
 	}{
-		{
-			name:        "Example00",
-			filename:    "example00.json",
-			ants:        4,
-			maxTurns:    6,
-			description: "Simple linear graph with 4 rooms",
-		},
-		{
-			name:        "Example01",
-			filename:    "example01.json",
-			ants:        10,
-			maxTurns:    8,
-			description: "Medium complexity graph",
-		},
-		{
-			name:        "Example02",
-			filename:    "example02.json",
-			ants:        20,
-			maxTurns:    11,
-			description: "Complex graph with multiple routes",
-		},
-		{
-			name:        "Example03",
-			filename:    "example03.json",
-			ants:        4,
-			maxTurns:    6,
-			description: "Alternative small graph",
-		},
-		{
-			name:        "Example04",
-			filename:    "example04.json",
-			ants:        9,
-			maxTurns:    6,
-			description: "Medium graph with 9 ants",
-		},
-		{
-			name:        "Example05",
-			filename:    "example05.json",
-			ants:        9,
-			maxTurns:    8,
-			description: "Complex graph with 9 ants",
-		},
+		{name: "Example00", filename: "example00.json", ants: 4, maxTurns: 6, description: "Simple linear graph with 4 rooms"},
+		{name: "Example01", filename: "example01.json", ants: 10, maxTurns: 8, description: "Medium complexity graph"},
+		{name: "Example02", filename: "example02.json", ants: 20, maxTurns: 11, description: "Complex graph with multiple routes"},
+		{name: "Example03", filename: "example03.json", ants: 4, maxTurns: 6, description: "Alternative small graph"},
+		{name: "Example04", filename: "example04.json", ants: 9, maxTurns: 6, description: "Medium graph with 9 ants"},
+		{name: "Example05", filename: "example05.json", ants: 9, maxTurns: 8, description: "Complex graph with 9 ants"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rooms, tunnels, err := loadJSONTestCase(tt.filename)
+			rooms, tunnels, err := loadJSONTestCase(filepath.Join("..", "tests", "data", tt.filename))
 			if err != nil {
 				t.Fatalf("Failed to load test case %s: %v", tt.filename, err)
 			}
@@ -124,12 +87,10 @@ func TestFindPaths_AuditExamples(t *testing.T) {
 func TestFindPaths_GreedyShortcutTrap(t *testing.T) {
 	// Graph structure:
 	//        A ------- X ------- B
-	//       /                     \
-	//   Start                      End
-	//       \                     /
+	//       /  \   (shortcut)     \
+	//   Start   `-------------.    End
+	//       \                  \  /
 	//        C ------- Y ------- D
-	//         \                 /
-	//          `----- (shortcut) ----'
 	//
 	// Top Route: Start -> A -> X -> B -> End (Length 5, including start and end)
 	// Bottom Route: Start -> C -> Y -> D -> End (Length 5)
@@ -179,9 +140,7 @@ func TestFindPaths_GreedyShortcutTrap(t *testing.T) {
 
 	if turns > expectedMaxTurns {
 		t.Errorf("Greedy Shortcut Trap: Expected maximum %d turns (using 2 routes), got %d turns with %d route(s).\n"+
-			"This indicates the algorithm took the greedy shortcut instead of finding vertex-disjoint paths.\n"+
-			"Routes found: %v",
-			expectedMaxTurns, turns, len(routes), routes)
+			"Routes found: %v", expectedMaxTurns, turns, len(routes), routes)
 	}
 
 	// Verify we found at least 2 routes (the optimal solution)
@@ -197,36 +156,35 @@ func TestFindPaths_GreedyShortcutTrap(t *testing.T) {
 // Two paths should NOT share intermediate rooms (only start and end can be shared).
 func TestFindPaths_VertexDisjointFlaw(t *testing.T) {
 	// Graph structure:
-	//        A
+	//         A
 	//       /   \
-	//   Start    BottleneckRoom ---- End
+	//   Start -- Bottleneck --- End
 	//       \   /              /
-	//        C                /
-	//         \              /
-	//          B -----------'
+	//         C               /
+	//          \             /
+	//           B ----------'
 	//
-	// Path 1: Start -> A -> BottleneckRoom -> End
-	// Path 2: Start -> C -> BottleneckRoom -> End (INVALID - shares BottleneckRoom)
-	// Path 3: Start -> C -> B -> End (Valid alternative if exists)
-	//
-	// Because BottleneckRoom is a normal room (not start/end), it can only be used by ONE path.
-	// The algorithm MUST enforce node splitting to prevent room overlap.
+	// Path 1: Start -> A -> Bottleneck -> End (Invalid)
+	// Path 2: Start -> Bottleneck -> End
+	// Path 3: Start -> C -> Bottleneck -> End (Invalid)
+	// Path 4: Start -> C -> B -> End
 
 	rooms := []Room{
 		{ID: "start", Group: "start", FX: 0, FY: 2},
 		{ID: "end", Group: "end", FX: 10, FY: 2},
 		{ID: "A", Group: "room", FX: 2, FY: 0},
-		{ID: "BottleneckRoom", Group: "room", FX: 5, FY: 2},
+		{ID: "Bottleneck", Group: "room", FX: 5, FY: 2},
 		{ID: "C", Group: "room", FX: 2, FY: 4},
 		{ID: "B", Group: "room", FX: 5, FY: 4},
 	}
 
 	tunnels := []Tunnel{
 		{Source: "start", Target: "A"},
-		{Source: "A", Target: "BottleneckRoom"},
-		{Source: "BottleneckRoom", Target: "end"},
+		{Source: "start", Target: "Bottleneck"}, // converge
+		{Source: "Bottleneck", Target: "end"},
+		{Source: "A", Target: "Bottleneck"}, // converge
 		{Source: "start", Target: "C"},
-		{Source: "C", Target: "BottleneckRoom"}, // Both paths converge here!
+		{Source: "C", Target: "Bottleneck"}, // converge
 		{Source: "C", Target: "B"},
 		{Source: "B", Target: "end"},
 	}
@@ -246,16 +204,14 @@ func TestFindPaths_VertexDisjointFlaw(t *testing.T) {
 			roomUsage[room]++
 			if roomUsage[room] > 1 {
 				t.Errorf("Vertex-Disjoint Flaw: Room '%s' is shared by multiple routes!\n"+
-					"Routes: %v\n"+
-					"Each intermediate room can only appear in ONE path. Check node splitting implementation.",
-					room, routes)
+					"Routes: %v\n", room, routes)
 			}
 		}
 	}
 
 	// Given the graph structure, with proper node splitting, only 2 vertex-disjoint paths exist:
-	// Path 1: start -> A -> BottleneckRoom -> end
-	// Path 2: start -> C -> B -> end
+	// start -> Bottleneck -> end
+	// start -> C -> B -> end
 	expectedRoutes := 2
 	if len(routes) != expectedRoutes {
 		t.Errorf("Expected %d vertex-disjoint routes, found %d. Routes: %v",
@@ -267,33 +223,40 @@ func TestFindPaths_VertexDisjointFlaw(t *testing.T) {
 // This tests the core of Edmonds-Karp: flow cancellation via backward edges.
 func TestFindPaths_ResidualEdgeReversal(t *testing.T) {
 	// Graph structure:
-	//         A ------- C ------- D
-	//        /           |         \
-	//   Start            |          End
-	//        \           |         /
-	//         B --------'     F --'
-	//                        /
-	//                   A --'
+	//       .---- A ----- E
+	//      /      |        \
+	//     /   B --|---- F   I
+	//    /   / \  |      \  |
+	//   Start   neck ---- End
+	//    \   \ /  |      /  |
+	//     \   C --|---- G   J
+	//      \      |        /
+	//       `---- D ----- H
 	//
-	// Initial BFS might push flow: Start -> A -> C -> D -> End
+	// Initial BFS might push flow: Start -> A -> neck -> End
 	// But optimal flow requires:
-	//   Path 1: Start -> B -> C -> D -> End
-	//   Path 2: Start -> A -> F -> End
+	//	Path 1: Start -> A -> E -> I -> End
+	//	Path 2: Start -> B -> F -> End
+	//	Path 3: Start -> C -> G -> End
+	//	Path 4: Start -> D -> neck -> End
 	//
-	// To find Path 2, the algorithm must:
-	// 1. Push flow Start -> A -> C -> D -> End
-	// 2. On next iteration, travel the residual edge C -> A (backward)
-	// 3. Realize A can redirect to F -> End
-	// 4. Cancel the A -> C flow and establish A -> F flow
+	// Last path keeps the junction path. All other paths that used the
+	// bottle neck should be undone.
 
 	rooms := []Room{
-		{ID: "start", Group: "start", FX: 0, FY: 2},
-		{ID: "end", Group: "end", FX: 10, FY: 2},
-		{ID: "A", Group: "room", FX: 2, FY: 0},
-		{ID: "B", Group: "room", FX: 2, FY: 4},
-		{ID: "C", Group: "room", FX: 5, FY: 2},
-		{ID: "D", Group: "room", FX: 8, FY: 0},
-		{ID: "F", Group: "room", FX: 8, FY: 4},
+		{ID: "start", Group: "start", FX: 0, FY: 4},
+		{ID: "A", Group: "room", FX: 4, FY: 8},
+		{ID: "B", Group: "room", FX: 2, FY: 6},
+		{ID: "neck", Group: "room", FX: 4, FY: 4},
+		{ID: "C", Group: "room", FX: 2, FY: 2},
+		{ID: "D", Group: "room", FX: 4, FY: 0},
+		{ID: "E", Group: "room", FX: 8, FY: 8},
+		{ID: "F", Group: "room", FX: 6, FY: 6},
+		{ID: "G", Group: "room", FX: 8, FY: 2},
+		{ID: "H", Group: "room", FX: 8, FY: 4},
+		{ID: "I", Group: "room", FX: 8, FY: 0},
+		{ID: "J", Group: "room", FX: 8, FY: 0},
+		{ID: "end", Group: "end", FX: 10, FY: 4},
 	}
 
 	tunnels := []Tunnel{
@@ -307,7 +270,7 @@ func TestFindPaths_ResidualEdgeReversal(t *testing.T) {
 		{Source: "F", Target: "end"},
 	}
 
-	ants := 6
+	ants := 13
 	routes := FindPaths(ants, rooms, tunnels)
 
 	if len(routes) == 0 {
