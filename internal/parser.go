@@ -29,6 +29,7 @@ type GraphData struct {
 	End   string   `json:"end,omitempty"`
 	Nodes []Room   `json:"nodes"`
 	Links []Tunnel `json:"links"`
+	Steps []Step   `json:"steps,omitempty"`
 }
 
 // ReadAllLines reads all lines from r into a slice of strings.
@@ -123,15 +124,16 @@ func ParseInput(lines []string) (GraphData, error) {
 					}
 
 					haveStart = true
+					data.Start = name
 				case "end":
 					if haveEnd {
 						return GraphData{}, invalidDataError("duplicate end room")
 					}
 
 					haveEnd = true
+					data.End = name
 				}
 
-				data.End = name
 				room.Group = pendingGroup
 				pendingGroup = ""
 			}

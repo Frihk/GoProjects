@@ -62,6 +62,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	paths := internal.FindPaths(graphData.Ants, graphData.Nodes, graphData.Links)
+	if len(paths) > 0 {
+		graphData.Steps = internal.SimulateSteps(graphData.Ants, paths, graphData.End)
+	}
+
 	graphDataAsJson, err := json.Marshal(graphData)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERROR: could not convert to json:", err)
