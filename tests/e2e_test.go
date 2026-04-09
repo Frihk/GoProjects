@@ -27,6 +27,8 @@ var (
 	rootDir   string
 )
 
+const defaultRunTimeout = 10 * time.Second
+
 func mustBuild(t *testing.T) string {
 	t.Helper()
 	buildOnce.Do(func() {
@@ -82,23 +84,7 @@ func badSamplePath(name string) string {
 
 func runLemIn(t *testing.T, filename string) (string, string, int) {
 	t.Helper()
-	bin := mustBuild(t)
-
-	cmd := exec.Command(bin, filename)
-	var outBuf, errBuf bytes.Buffer
-	cmd.Stdout = &outBuf
-	cmd.Stderr = &errBuf
-
-	err := cmd.Run()
-	exitCode := 0
-	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			exitCode = ee.ExitCode()
-		} else {
-			t.Fatalf("exec error for %s: %v", filepath.Base(filename), err)
-		}
-	}
-	return outBuf.String(), errBuf.String(), exitCode
+	return runLemInWithTimeout(t, filename, defaultRunTimeout)
 }
 
 func runLemInWithTimeout(t *testing.T, filename string, timeout time.Duration) (string, string, int) {
@@ -127,6 +113,21 @@ func runLemInWithTimeout(t *testing.T, filename string, timeout time.Duration) (
 		}
 	}
 	return outBuf.String(), errBuf.String(), exitCode
+}
+
+// writeTempInput writes content to a temp file and returns its path.
+// The caller should defer os.Remove on the returned path.
+func writeTempInput(t *testing.T, content string) string {
+	t.Helper()
+	f, err := os.CreateTemp("", "lemin-test-*.txt")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	if _, err := f.WriteString(content); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+	f.Close()
+	return f.Name()
 }
 
 // ---------------------------------------------------------------------------
@@ -199,6 +200,12 @@ func parseStartEnd(filename string) (string, string, error) {
 
 var moveRe = regexp.MustCompile(`^L(\d+)-(\S+)$`)
 
+// validateOutputFormat checks the full output for spec compliance:
+//   - echoed input matches the original file
+//   - every move has the L<id>-<room> format
+//   - no ant moves twice in a single turn
+//   - ant IDs appear in ascending order per turn
+//   - no intermediate room is occupied by more than one ant at a time
 func validateOutputFormat(t *testing.T, inputFile, stdout string) [][]string {
 	t.Helper()
 
@@ -207,13 +214,12 @@ func validateOutputFormat(t *testing.T, inputFile, stdout string) [][]string {
 	if err != nil {
 		t.Fatalf("read input file: %v", err)
 	}
-	inputContent := strings.TrimRight(string(inputBytes), "\n")
 
-	idx := strings.Index(stdout, "\n\n")
-	if idx < 0 {
+	inputContent := strings.TrimRight(string(inputBytes), "\n")
+	echoed, _, found := strings.Cut(stdout, "\n\n")
+	if !found {
 		t.Fatal("output missing blank-line separator between echoed input and simulation")
 	}
-	echoed := strings.TrimRight(stdout[:idx], "\n")
 	if echoed != inputContent {
 		t.Errorf("echoed input does not match the original file")
 	}
@@ -225,10 +231,6 @@ func validateOutputFormat(t *testing.T, inputFile, stdout string) [][]string {
 	}
 
 	startRoom, endRoom, _ := parseStartEnd(inputFile)
-	endMarkers := map[string]bool{
-		endRoom: true,
-		"0":     true,
-	}
 
 	antRoom := make(map[int]string)
 
@@ -258,12 +260,13 @@ func validateOutputFormat(t *testing.T, inputFile, stdout string) [][]string {
 			t.Errorf("turn %d: ant IDs not in ascending order: %v", turnIdx+1, antIDs)
 		}
 
+		// Check room occupancy — start and end rooms have unlimited capacity.
 		roomOccupants := make(map[string][]int)
 		for id, rm := range antRoom {
 			roomOccupants[rm] = append(roomOccupants[rm], id)
 		}
 		for rm, ants := range roomOccupants {
-			if len(ants) > 1 && !endMarkers[rm] && rm != startRoom {
+			if len(ants) > 1 && rm != endRoom && rm != startRoom {
 				t.Errorf("turn %d: room %q occupied by multiple ants: %v",
 					turnIdx+1, rm, ants)
 			}
@@ -273,6 +276,48 @@ func validateOutputFormat(t *testing.T, inputFile, stdout string) [][]string {
 	return turns
 }
 
+// assertVertexCapacity verifies that a specific room is never occupied by
+// more than one ant at any point during the simulation.
+func assertVertexCapacity(t *testing.T, turns [][]string, room string) {
+	t.Helper()
+
+	antPos := make(map[int]string)
+	for turnIdx, moves := range turns {
+		for _, mv := range moves {
+			m := moveRe.FindStringSubmatch(mv)
+			if m == nil {
+				continue
+			}
+			antID, _ := strconv.Atoi(m[1])
+			antPos[antID] = m[2]
+		}
+
+		var count int
+		for _, rm := range antPos {
+			if rm == room {
+				count++
+			}
+		}
+		if count > 1 {
+			t.Errorf("turn %d: %d ants in room %q – vertex capacity violated",
+				turnIdx+1, count, room)
+		}
+	}
+}
+
+// assertErrorOutput checks that the program reported an error.
+func assertErrorOutput(t *testing.T, stdout, stderr string, exitCode int) {
+	t.Helper()
+	combined := stdout + stderr
+	if !strings.Contains(combined, "ERROR: invalid data format") {
+		t.Errorf("expected 'ERROR: invalid data format' in output, got:\nstdout: %s\nstderr: %s",
+			stdout, stderr)
+	}
+	if exitCode != 0 && exitCode != 1 {
+		t.Errorf("expected exit code 0 or 1, got %d", exitCode)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // 1. Output Formatting Rules
 // ---------------------------------------------------------------------------
@@ -280,14 +325,7 @@ func validateOutputFormat(t *testing.T, inputFile, stdout string) [][]string {
 func TestOutputFormat(t *testing.T) {
 	t.Parallel()
 
-	files := []string{
-		"example00.txt",
-		"example01.txt",
-		"example03.txt",
-		"example04.txt",
-	}
-	for _, f := range files {
-		f := f
+	for _, f := range []string{"example00.txt", "example01.txt", "example03.txt", "example04.txt"} {
 		t.Run(f, func(t *testing.T) {
 			t.Parallel()
 			stdout, _, _ := runLemIn(t, samplePath(f))
@@ -316,7 +354,6 @@ func TestAuditTurnLimits(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.file, func(t *testing.T) {
 			t.Parallel()
 			stdout, _, _ := runLemIn(t, samplePath(tc.file))
@@ -336,61 +373,44 @@ func TestAuditTurnLimits(t *testing.T) {
 // 3. Performance / Timeout Requirements
 // ---------------------------------------------------------------------------
 
-func TestPerformance_Example06(t *testing.T) {
-	stdout, _, _ := runLemInWithTimeout(t, samplePath("example06.txt"), 90*time.Second)
+func TestPerformance(t *testing.T) {
+	tests := []struct {
+		file    string
+		timeout time.Duration
+		ants    int
+	}{
+		{"example06.txt", 90 * time.Second, 100},
+		{"example07.txt", 150 * time.Second, 1000},
+	}
 
-	numTurns, _, err := parseTurns(stdout)
-	if err != nil {
-		t.Fatalf("parse output: %v", err)
-	}
-	if numTurns == 0 {
-		t.Error("expected simulation output, got zero turns")
-	}
-	t.Logf("example06 (100 ants) completed with %d turns", numTurns)
-}
+	for _, tc := range tests {
+		t.Run(tc.file, func(t *testing.T) {
+			stdout, _, _ := runLemInWithTimeout(t, samplePath(tc.file), tc.timeout)
 
-func TestPerformance_Example07(t *testing.T) {
-	stdout, _, _ := runLemInWithTimeout(t, samplePath("example07.txt"), 150*time.Second)
-
-	numTurns, _, err := parseTurns(stdout)
-	if err != nil {
-		t.Fatalf("parse output: %v", err)
+			numTurns, _, err := parseTurns(stdout)
+			if err != nil {
+				t.Fatalf("parse output: %v", err)
+			}
+			if numTurns == 0 {
+				t.Error("expected simulation output, got zero turns")
+			}
+			t.Logf("%s (%d ants) completed with %d turns", tc.file, tc.ants, numTurns)
+		})
 	}
-	if numTurns == 0 {
-		t.Error("expected simulation output, got zero turns")
-	}
-	t.Logf("example07 (1000 ants) completed with %d turns", numTurns)
 }
 
 // ---------------------------------------------------------------------------
 // 4. Failure Cases
 // ---------------------------------------------------------------------------
 
-func assertErrorOutput(t *testing.T, stdout, stderr string, exitCode int, label string) {
-	t.Helper()
-	combined := stdout + stderr
-	if !strings.Contains(combined, "ERROR: invalid data format") {
-		t.Errorf("%s: expected 'ERROR: invalid data format' in output, got:\nstdout: %s\nstderr: %s",
-			label, stdout, stderr)
-	}
-	if exitCode != 0 && exitCode != 1 {
-		t.Errorf("%s: expected exit code 0 or 1, got %d", label, exitCode)
-	}
-}
-
 func TestFailureCases_BadSamples(t *testing.T) {
 	t.Parallel()
 
-	tests := []string{
-		"badexample00.txt",
-		"badexample01.txt",
-	}
-	for _, f := range tests {
-		f := f
+	for _, f := range []string{"badexample00.txt", "badexample01.txt"} {
 		t.Run(f, func(t *testing.T) {
 			t.Parallel()
 			stdout, stderr, exitCode := runLemIn(t, badSamplePath(f))
-			assertErrorOutput(t, stdout, stderr, exitCode, f)
+			assertErrorOutput(t, stdout, stderr, exitCode)
 		})
 	}
 }
@@ -402,54 +422,24 @@ func TestFailureCases_Dynamic(t *testing.T) {
 		name    string
 		content string
 	}{
-		{
-			name:    "missing_start_room",
-			content: "5\n##end\nend 1 1\nroom1 2 2\nroom1-end\n",
-		},
-		{
-			name:    "missing_end_room",
-			content: "5\n##start\nstart 0 0\nroom1 2 2\nstart-room1\n",
-		},
-		{
-			name:    "invalid_coordinates",
-			content: "3\n##start\nstart abc def\n##end\nend 1 1\nstart-end\n",
-		},
-		{
-			name:    "room_links_to_itself",
-			content: "3\n##start\nstart 0 0\n##end\nend 5 5\nmid 2 2\nstart-mid\nmid-mid\nmid-end\n",
-		},
-		{
-			name:    "zero_ants",
-			content: "0\n##start\nstart 0 0\n##end\nend 1 1\nstart-end\n",
-		},
-		{
-			name:    "negative_ants",
-			content: "-5\n##start\nstart 0 0\n##end\nend 1 1\nstart-end\n",
-		},
-		{
-			name:    "duplicate_room",
-			content: "3\n##start\nstart 0 0\nstart 1 1\n##end\nend 5 5\nstart-end\n",
-		},
+		{"missing_start_room", "5\n##end\nend 1 1\nroom1 2 2\nroom1-end\n"},
+		{"missing_end_room", "5\n##start\nstart 0 0\nroom1 2 2\nstart-room1\n"},
+		{"invalid_coordinates", "3\n##start\nstart abc def\n##end\nend 1 1\nstart-end\n"},
+		{"room_links_to_itself", "3\n##start\nstart 0 0\n##end\nend 5 5\nmid 2 2\nstart-mid\nmid-mid\nmid-end\n"},
+		{"zero_ants", "0\n##start\nstart 0 0\n##end\nend 1 1\nstart-end\n"},
+		{"negative_ants", "-5\n##start\nstart 0 0\n##end\nend 1 1\nstart-end\n"},
+		{"duplicate_room", "3\n##start\nstart 0 0\nstart 1 1\n##end\nend 5 5\nstart-end\n"},
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			tmpFile, err := os.CreateTemp("", "lemin-bad-*.txt")
-			if err != nil {
-				t.Fatalf("create temp file: %v", err)
-			}
-			defer os.Remove(tmpFile.Name())
+			path := writeTempInput(t, tc.content)
+			defer os.Remove(path)
 
-			if _, err := tmpFile.WriteString(tc.content); err != nil {
-				t.Fatalf("write temp file: %v", err)
-			}
-			tmpFile.Close()
-
-			stdout, stderr, exitCode := runLemIn(t, tmpFile.Name())
-			assertErrorOutput(t, stdout, stderr, exitCode, tc.name)
+			stdout, stderr, exitCode := runLemIn(t, path)
+			assertErrorOutput(t, stdout, stderr, exitCode)
 		})
 	}
 }
@@ -470,11 +460,9 @@ func TestGreedyTrap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse output: %v", err)
 	}
-
-	const maxOptimalTurns = 9
-	if numTurns > maxOptimalTurns {
-		t.Errorf("greedy trap: expected at most %d turns (optimal two-path), got %d – "+
-			"program may be taking the greedy shortcut", maxOptimalTurns, numTurns)
+	if numTurns > 9 {
+		t.Errorf("expected at most 9 turns (optimal two-path), got %d – "+
+			"program may be taking the greedy shortcut", numTurns)
 	}
 }
 
@@ -489,93 +477,30 @@ func TestNodeDisjointEnforcement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse output: %v", err)
 	}
-
-	const target = "bottleneck"
-	antPos := make(map[int]string)
-
-	for turnIdx, moves := range turns {
-		for _, mv := range moves {
-			m := moveRe.FindStringSubmatch(mv)
-			if m == nil {
-				continue
-			}
-			antID, _ := strconv.Atoi(m[1])
-			antPos[antID] = m[2]
-		}
-
-		var count int
-		for _, rm := range antPos {
-			if rm == target {
-				count++
-			}
-		}
-		if count > 1 {
-			t.Errorf("turn %d: %d ants in room %q – vertex capacity violated",
-				turnIdx+1, count, target)
-		}
-	}
+	assertVertexCapacity(t, turns, "bottleneck")
 }
 
 // TestResidualEdgeReversal uses residual.txt where the initial BFS pushes
 // flow through the "junction" room but the optimal 4-path solution requires
-// reversing that flow. With 13 ants and 4 optimal paths the theoretical
-// maximum is 6 turns (with a small margin of 7 allowed).
+// reversing that flow. Checks both turn-count optimality (≤7) and that the
+// "junction" room vertex capacity is never violated.
 func TestResidualEdgeReversal(t *testing.T) {
 	t.Parallel()
 
 	stdout, _, _ := runLemIn(t, samplePath("residual.txt"))
 
-	numTurns, _, err := parseTurns(stdout)
+	numTurns, turns, err := parseTurns(stdout)
 	if err != nil {
 		t.Fatalf("parse output: %v", err)
 	}
-
-	const maxTurns = 7
-	if numTurns > maxTurns {
-		t.Errorf("residual reversal: expected at most %d turns, got %d – "+
-			"residual edge handling may be incorrect", maxTurns, numTurns)
+	if numTurns > 7 {
+		t.Errorf("expected at most 7 turns, got %d – residual edge handling may be incorrect", numTurns)
 	}
+	assertVertexCapacity(t, turns, "junction")
 }
 
-// TestResidualJunctionDisjoint verifies that in residual.txt the "junction"
-// room is never occupied by more than one ant at a time.
-func TestResidualJunctionDisjoint(t *testing.T) {
-	t.Parallel()
-
-	stdout, _, _ := runLemIn(t, samplePath("residual.txt"))
-
-	_, turns, err := parseTurns(stdout)
-	if err != nil {
-		t.Fatalf("parse output: %v", err)
-	}
-
-	const target = "junction"
-	antPos := make(map[int]string)
-
-	for turnIdx, moves := range turns {
-		for _, mv := range moves {
-			m := moveRe.FindStringSubmatch(mv)
-			if m == nil {
-				continue
-			}
-			antID, _ := strconv.Atoi(m[1])
-			antPos[antID] = m[2]
-		}
-
-		var count int
-		for _, rm := range antPos {
-			if rm == target {
-				count++
-			}
-		}
-		if count > 1 {
-			t.Errorf("turn %d: %d ants in room %q – vertex capacity violated",
-				turnIdx+1, count, target)
-		}
-	}
-}
-
-// TestDuplicateLink verifies that a file with duplicate tunnels is handled.
+// TestDuplicateLink verifies that a file with duplicate tunnels is handled
+// either by reporting an error or by solving correctly.
 func TestDuplicateLink(t *testing.T) {
 	t.Parallel()
 
@@ -604,96 +529,56 @@ func TestDuplicateLink(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Programmatic edge-case graphs
+// 6. Programmatic Edge-Case Graphs
 // ---------------------------------------------------------------------------
 
-// TestProgrammatic_DiamondGraph verifies two node-disjoint paths are found:
-//
-//	Start -> A -> End
-//	Start -> B -> End
-//
-// With 10 ants and 2 paths of 2 hops each, optimal = 6 turns.
-func TestProgrammatic_DiamondGraph(t *testing.T) {
+func TestProgrammaticGraphs(t *testing.T) {
 	t.Parallel()
 
-	content := "10\n##start\nstart 0 1\nA 1 2\nB 1 0\n##end\nend 2 1\nstart-A\nstart-B\nA-end\nB-end\n"
-
-	tmpFile, err := os.CreateTemp("", "lemin-diamond-*.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString(content)
-	tmpFile.Close()
-
-	stdout, _, _ := runLemIn(t, tmpFile.Name())
-
-	numTurns, _, err := parseTurns(stdout)
-	if err != nil {
-		t.Fatalf("parse output: %v", err)
-	}
-
-	const maxTurns = 6
-	if numTurns > maxTurns {
-		t.Errorf("diamond graph: expected at most %d turns, got %d", maxTurns, numTurns)
-	}
-}
-
-// TestProgrammatic_SinglePath verifies a single linear path:
-//
-//	Start -> A -> B -> End   (3 hops)
-//	With 3 ants: 3 + 3 - 1 = 5 turns.
-func TestProgrammatic_SinglePath(t *testing.T) {
-	t.Parallel()
-
-	content := "3\n##start\nstart 0 0\nA 1 0\nB 2 0\n##end\nend 3 0\nstart-A\nA-B\nB-end\n"
-
-	tmpFile, err := os.CreateTemp("", "lemin-linear-*.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString(content)
-	tmpFile.Close()
-
-	stdout, _, _ := runLemIn(t, tmpFile.Name())
-
-	numTurns, _, err := parseTurns(stdout)
-	if err != nil {
-		t.Fatalf("parse output: %v", err)
+	tests := []struct {
+		name     string
+		content  string
+		maxTurns int
+	}{
+		{
+			// Two node-disjoint paths: Start→A→End, Start→B→End.
+			// 10 ants, 2 paths of 2 hops → optimal 6 turns.
+			name:     "diamond",
+			content:  "10\n##start\nstart 0 1\nA 1 2\nB 1 0\n##end\nend 2 1\nstart-A\nstart-B\nA-end\nB-end\n",
+			maxTurns: 6,
+		},
+		{
+			// Single linear path: Start→A→B→End (3 hops).
+			// 3 ants → 3 + 3 - 1 = 5 turns.
+			name:     "single_path",
+			content:  "3\n##start\nstart 0 0\nA 1 0\nB 2 0\n##end\nend 3 0\nstart-A\nA-B\nB-end\n",
+			maxTurns: 5,
+		},
+		{
+			// Direct connection: Start→End (1 hop).
+			// 5 ants → 5 turns.
+			name:     "direct_connection",
+			content:  "5\n##start\nstart 0 0\n##end\nend 1 0\nstart-end\n",
+			maxTurns: 5,
+		},
 	}
 
-	const maxTurns = 5
-	if numTurns > maxTurns {
-		t.Errorf("single path: expected at most %d turns, got %d", maxTurns, numTurns)
-	}
-}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-// TestProgrammatic_DirectConnection verifies the trivial Start -> End case.
-//
-//	With 5 ants and 1 hop: 5 turns.
-func TestProgrammatic_DirectConnection(t *testing.T) {
-	t.Parallel()
+			path := writeTempInput(t, tc.content)
+			defer os.Remove(path)
 
-	content := "5\n##start\nstart 0 0\n##end\nend 1 0\nstart-end\n"
+			stdout, _, _ := runLemIn(t, path)
 
-	tmpFile, err := os.CreateTemp("", "lemin-direct-*.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString(content)
-	tmpFile.Close()
-
-	stdout, _, _ := runLemIn(t, tmpFile.Name())
-
-	numTurns, _, err := parseTurns(stdout)
-	if err != nil {
-		t.Fatalf("parse output: %v", err)
-	}
-
-	const maxTurns = 5
-	if numTurns > maxTurns {
-		t.Errorf("direct connection: expected at most %d turns, got %d", maxTurns, numTurns)
+			numTurns, _, err := parseTurns(stdout)
+			if err != nil {
+				t.Fatalf("parse output: %v", err)
+			}
+			if numTurns > tc.maxTurns {
+				t.Errorf("expected at most %d turns, got %d", tc.maxTurns, numTurns)
+			}
+		})
 	}
 }
