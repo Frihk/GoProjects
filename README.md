@@ -42,19 +42,20 @@ The simulation logic adheres perfectly to the "one ant per room" rule. Our turn 
 
 ---
 
-## High-Fidelity Visualiser
+## Graphical Visualiser
 
-We have built a beautiful, standalone 3D/2D graphical dashboard to watch your ants navigate the maze! It operates purely on **Go** and standard **JavaScript**, meaning there are no `node_modules` or TS build steps required.
+We have a lightweight, standalone 2D graphical dashboard built entirely in **Go** and standard **JavaScript**. Anyone cloning this repository can run it out of the box without installing any external dependencies or running build tools.
 
 ### How to Run
 
-Feed an ant farm map (e.g., `test0.txt`) into the main program, and pipe the output into the visualiser web server:
+1. Ensure you have **Go** installed on your machine.
+2. Feed any valid ant farm map file into the main program, and pipe the output into the visualiser web server:
 
-```powershell
-go run ./cmd test0.txt | go run visualiser/server.go
+```bash
+go run ./cmd <path_to_map_file> | go run visualiser/server.go
 ```
 
-Then, open your web browser and navigate privately to: **[http://localhost:3000](http://localhost:3000)**
+3. The Go server will bind to port 3000 by default. Open your web browser of choice and navigate to: **[http://localhost:3000](http://localhost:3000)**
 
 ### Dashboard Controls
 
