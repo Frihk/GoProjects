@@ -122,7 +122,7 @@ You can therefore use the simulator and visualiser together:
 
 ```bash
 make
-./lem-in <map_file> | ./visualiser
+./lem-in ./tests/samples/example05.txt | ./visualiser
 ```
 
 ### Dashboard Controls

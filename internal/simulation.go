@@ -76,14 +76,19 @@ func SimulateSteps(ants int, paths [][]string, endRoom string) []Step {
 	return steps
 }
 
-// Simulate prints the simulation output to stdout (original behavior).
-func Simulate(ants int, paths [][]string, endRoom string) {
+// Simulate returns the formatted steps of simulation of the walking through the farm.
+func Simulate(ants int, paths [][]string, endRoom string) []string {
+	var formattedSteps []string
 	steps := SimulateSteps(ants, paths, endRoom)
+
 	for _, step := range steps {
 		var parts []string
 		for _, m := range step.Moves {
 			parts = append(parts, fmt.Sprintf("L%d-%s", m.AntID, m.RoomName))
 		}
-		fmt.Println(strings.Join(parts, " "))
+
+		formattedSteps = append(formattedSteps, strings.Join(parts, " "))
 	}
+
+	return formattedSteps
 }

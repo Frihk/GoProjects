@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"lem-in/internal"
 )
@@ -40,5 +41,9 @@ func main() {
 		return
 	}
 
-	internal.Simulate(data.Ants, paths, data.End)
+	fmt.Println(strings.Join(lines, "\n"))
+	fmt.Println()
+	steps := internal.Simulate(data.Ants, paths, data.End)
+
+	fmt.Println(strings.Join(steps, "\n"))
 }
