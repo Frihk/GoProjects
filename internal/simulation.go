@@ -5,73 +5,55 @@ import (
 	"strings"
 )
 
-func Simulate(ants int, paths [][]string, start, end string) {
+type Ant struct {
+	ID       int
+	Path     []string
+	Position int
+}
+
+func Simulate(ants int, paths [][]string, endRoom string) {
 	assignments := DistributeAnts(ants, paths)
 
 	var allAnts []Ant
-	id := 1
-
-	for _, a := range assignments {
-		for i := 0; i < a.Ants; i++ {
-			fullPath := append([]string{start}, append(a.Path, end)...)
-
-			allAnts = append(allAnts, Ant{
-				ID:       id,
-				Path:     fullPath,
-				Position: 0,
-			})
-			id++
+	for i, a := range assignments {
+		for range a.Ants {
+			allAnts = append(allAnts, Ant{ID: i + 1, Path: a.Path})
 		}
 	}
-	for {
-		var moves []string
-		occupied := make(map[string]bool)
-		allFinished := true
 
-		for i := len(allAnts) - 1; i >= 0; i-- {
+	var moves []string
+	capacity := make(map[string]int)
+	allFinished := false
+
+	for !allFinished {
+		moves = moves[:0]
+		allFinished = true
+
+		for i := range allAnts {
 			ant := &allAnts[i]
 
-			if ant.Finished {
+			if ant.Position >= len(ant.Path) {
 				continue
+			}
+
+			// Leave previous room
+			if ant.Position > 0 {
+				prevRoom := ant.Path[ant.Position-1]
+				capacity[prevRoom]--
 			}
 
 			allFinished = false
+			room := ant.Path[ant.Position]
 
-			next := ant.Position + 1
-			if next >= len(ant.Path) {
-				continue
-			}
-
-			nextRoom := ant.Path[next]
-
-			if nextRoom == end || !occupied[nextRoom] {
-
-				// free current
-				if ant.Position > 0 {
-					curr := ant.Path[ant.Position]
-					if curr != start {
-						delete(occupied, curr)
-					}
+			// Advance ant if room is not full
+			if capacity[room] < 1 {
+				if room != endRoom {
+					capacity[room]++
 				}
 
 				ant.Position++
-
-				if nextRoom != end {
-					occupied[nextRoom] = true
-				}
-
-				moves = append(moves,
-					fmt.Sprintf("L%d-%s", ant.ID, nextRoom),
-				)
-
-				if nextRoom == end {
-					ant.Finished = true
-				}
+				moves = append(moves, fmt.Sprintf("L%d-%s", ant.ID, room))
 			}
-		}
-
-		if allFinished {
-			break
 		}
 
 		if len(moves) > 0 {

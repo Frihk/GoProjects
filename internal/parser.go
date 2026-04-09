@@ -25,6 +25,8 @@ type Tunnel struct {
 // GraphData is the full payload returned to the frontend.
 type GraphData struct {
 	Ants  int      `json:"ants"`
+	Start string   `json:"start,omitempty"`
+	End   string   `json:"end,omitempty"`
 	Nodes []Room   `json:"nodes"`
 	Links []Tunnel `json:"links"`
 }
@@ -63,15 +65,16 @@ func ParseInput(lines []string) (GraphData, error) {
 				if pendingGroup != "" {
 					return GraphData{}, invalidDataError("multiple start/end markers without a room")
 				}
+
 				pendingGroup = "start"
 			case "##end":
 				if pendingGroup != "" {
 					return GraphData{}, invalidDataError("multiple start/end markers without a room")
 				}
+
 				pendingGroup = "end"
-			default:
-				// comment line, ignore
 			}
+
 			continue
 		}
 
@@ -110,25 +113,29 @@ func ParseInput(lines []string) (GraphData, error) {
 				return GraphData{}, invalidDataError(fmt.Sprintf("duplicate room %q", name))
 			}
 
-			group := "room"
+			room := Room{ID: name, Group: "room", FX: x, FY: y}
+
 			if pendingGroup != "" {
-				group = pendingGroup
-				pendingGroup = ""
-				switch group {
+				switch pendingGroup {
 				case "start":
 					if haveStart {
 						return GraphData{}, invalidDataError("duplicate start room")
 					}
+
 					haveStart = true
 				case "end":
 					if haveEnd {
 						return GraphData{}, invalidDataError("duplicate end room")
 					}
+
 					haveEnd = true
 				}
+
+				data.End = name
+				room.Group = pendingGroup
+				pendingGroup = ""
 			}
 
-			room := Room{ID: name, Group: group, FX: x, FY: y}
 			data.Nodes = append(data.Nodes, room)
 			rooms[name] = room
 			continue

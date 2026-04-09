@@ -44,15 +44,16 @@ func newGraph(rooms []Room, tunnels []Tunnel) (start, end *node) {
 
 	// Step 1: Create nodes and split normal rooms
 	for _, r := range rooms {
-		if r.Group == "start" {
+		switch r.Group {
+		case "start":
 			start = &node{name: r.ID, isOut: true}
 			lookup[r.ID+"_in"] = start
 			lookup[r.ID+"_out"] = start
-		} else if r.Group == "end" {
+		case "end":
 			end = &node{name: r.ID, isOut: false}
 			lookup[r.ID+"_in"] = end
 			lookup[r.ID+"_out"] = end
-		} else {
+		default:
 			// Normal rooms are split to enforce the bottleneck
 			inNode := &node{name: r.ID, isOut: false}
 			outNode := &node{name: r.ID, isOut: true}
@@ -128,32 +129,32 @@ func bfs(start, end *node) map[*node]*edge {
 func extractPaths(start, end *node) [][]string {
 	var paths [][]string
 
-	// Look at all physical outgoing connections from the Start room
 	for _, startEdge := range start.outgoing {
-		// If flow went through this forward edge
-		if startEdge.capacity == 0 {
-			var path []string
-			currNode := startEdge.to
+		if startEdge.capacity != 0 { // skip paths that were not used.
+			continue
+		}
 
-			// Walk the flow until we hit the End room
-			for currNode != end {
-				// Only record the name when passing the 'Out' door to avoid duplicates
-				if currNode.isOut {
-					path = append(path, currNode.name)
-				}
+		var path []string
+		currNode := startEdge.to
 
-				// Find the next consumed physical edge
-				for _, nextEdge := range currNode.outgoing {
-					if nextEdge.capacity == 0 {
-						currNode = nextEdge.to
-						break
-					}
+		for currNode != nil && currNode != end {
+			// Only record the name when passing the 'Out' door to avoid duplicates
+			if currNode.isOut {
+				path = append(path, currNode.name)
+			}
+
+			outgoing := currNode.outgoing
+
+			currNode = nil
+			for _, nextEdge := range outgoing {
+				if nextEdge.capacity == 0 {
+					currNode = nextEdge.to
+					break
 				}
 			}
-			// Finally, append the end room
-			path = append(path, end.name)
-			paths = append(paths, path)
 		}
+
+		paths = append(paths, append(path, end.name))
 	}
 
 	return paths
@@ -164,7 +165,7 @@ func FindPaths(ants int, rooms []Room, tunnels []Tunnel) [][]string {
 	start, end := newGraph(rooms, tunnels)
 
 	bestTurns := math.MaxInt
-	var optimalRoutes [][]string
+	var optimalRoutes [][]string = nil
 
 	for {
 		parentMap := bfs(start, end)
@@ -186,33 +187,23 @@ func FindPaths(ants int, rooms []Room, tunnels []Tunnel) [][]string {
 			curr = incomingEdge.from
 		}
 
-		// Extract current clean paths
 		currentRoutes := extractPaths(start, end)
-
-		// Calculate turns required for this configuration
 		sumOfRouteLengths := 0
+
 		for _, r := range currentRoutes {
 			sumOfRouteLengths += len(r)
 		}
 
-		numberOfRoutes := len(currentRoutes)
-		turns := (ants+sumOfRouteLengths+numberOfRoutes-1)/numberOfRoutes - 1
+		turns := (ants+sumOfRouteLengths+len(currentRoutes)-1)/len(currentRoutes) - 1
 
-		// Optimization Check: Stop if adding this path makes us slower
+		// Stop if adding this path makes us slower
 		if turns >= bestTurns {
 			break
 		}
 
 		bestTurns = turns
-
-		// Create a deep copy of the current routes to save as the best state
-		optimalRoutes = make([][]string, len(currentRoutes))
-		for i, route := range currentRoutes {
-			optimalRoutes[i] = make([]string, len(route))
-			copy(optimalRoutes[i], route)
-		}
+		optimalRoutes = currentRoutes
 	}
 
 	return optimalRoutes
 }
-
