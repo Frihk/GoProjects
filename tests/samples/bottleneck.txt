@@ -1,0 +1,33 @@
+# Graph structure:
+#         A
+#       /   \
+#   Start -- Bottleneck --- End
+#       \   /              /
+#         C               /
+#          \             /
+#           B ----------'
+#
+# Path 1: Start -> A -> Bottleneck -> End (Invalid)
+# Path 2: Start -> Bottleneck -> End
+# Path 3: Start -> C -> Bottleneck -> End (Invalid)
+# Path 4: Start -> C -> B -> End
+# ANTS
+4
+# ROOMS
+##start
+start 0 4
+A 2 6
+C 2 2
+B 4 0
+bottleneck 6 4
+##end
+end 8 4
+# TUNNELS
+start-A
+start-bottleneck
+start-C
+A-bottleneck
+C-bottleneck
+C-B
+bottleneck-end
+B-end

@@ -1,0 +1,58 @@
+# Graph structure:
+#       .---- A -------- E
+#      /      |           \
+#     /   B --|------- F   I
+#    /   / \  |          \ |
+#   Start   junction ---- End
+#    \   \ /  |         /  |
+#     \   C --|------- G   J
+#      \      |           /
+#       `---- D -------- H
+#
+# Initial BFS might push flow: Start -> A -> junction -> End
+# But optimal flow requires:
+#	Path 1: Start -> A -> E -> I -> End
+#	Path 2: Start -> B -> F -> End
+#	Path 3: Start -> C -> G -> End
+#	Path 4: Start -> D -> junction -> End
+#
+# Last path keeps path through the junction. All other paths that used the
+# junction should be undone.
+# Ants
+13
+##start
+start 0 4
+A 4 8
+B 2 6
+# Bottle neck
+junction 4 4
+C 2 2
+D 4 0
+E 8 8
+F 6 6
+G 6 2
+H 8 0
+I 10 6
+J 10 2
+##end
+end 10 4
+# Tunnels
+start-A
+start-B
+start-C
+start-D
+A-E
+A-junction
+B-F
+B-junction
+C-G
+C-junction
+D-H
+D-junction
+E-I
+F-end
+junction-end
+G-end
+H-J
+I-end
+J-end
