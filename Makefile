@@ -1,22 +1,26 @@
-FRONTEND_DIR := ./front-end
 GOCMD := go
 
+FRONTEND_DIR := ./front-end
+INDEXJS := $(FRONTEND_DIR)/dist/index.js
+LEMIN := ./lem-in
+VISUALISER := ./visualiser
+
 .PHONY: all
-all: lem-in visualiser
+all: $(LEMIN) $(VISUALISER)
 
-.PHONY: lem-in
-lem-in:
-	$(GOCMD) build -o lem-in ./cmd
+.PHONY: $(LEMIN)
+$(LEMIN):
+	$(GOCMD) build -o $@ ./cmd
 
-.PHONY: frontend
-frontend:
-	cd $(FRONTEND_DIR) && npm install && npm run build
-
-.PHONY: visualiser
-visualiser: frontend
+.PHONY: $(VISUALISER)
+$(VISUALISER): $(INDEXJS)
 	$(GOCMD) build -o visualiser $(FRONTEND_DIR)/src
+
+.PHONY: $(INDEXJS)
+$(INDEXJS):
+	cd $(FRONTEND_DIR) && npm install && npm run build
 
 .PHONY: clean
 clean:
-	rm -f lem-in visualiser
-	rm -rf $(FRONTEND_DIR)/dist $(FRONTEND_DIR)/node_modules
+	$(RM) $(LEMIN) $(VISUALISER)
+	$(RM) -r $(FRONTEND_DIR)/dist $(FRONTEND_DIR)/node_modules
