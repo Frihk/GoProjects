@@ -22,8 +22,6 @@ let totalAntsCount = 0;
 let isPlaying = false;
 let animationSpeed = 0.02;
 
-let isHighlighting = false;
-let shortestPathLinks = new Set();
 let isRendering = false;
 
 // ---------------------------------------------------------
@@ -36,7 +34,7 @@ function ensureRendering() {
             let moving = false;
             ants.forEach(a => { if (a.progress < 1) moving = true; });
             
-            if (isPlaying || moving || isHighlighting) {
+            if (isPlaying || moving) {
                 // Apply an imperceptible zoom tweak to force the canvas to repaint
                 // This keeps animation active even when layout physics is asleep
                 Graph.zoom(Graph.zoom() + (Math.random() > 0.5 ? 1e-10 : -1e-10));
@@ -55,14 +53,8 @@ const elem = document.getElementById("graph-container");
 const Graph = ForceGraph()(elem)
   .nodeId("id")
   .enableNodeDrag(false)
-  .linkWidth(link => isHighlighting && isLinkInShortestPath(link) ? 6 : 2)
-  .linkColor(link => {
-      if (isHighlighting && isLinkInShortestPath(link)) return "#fbbf24"; 
-      return "rgba(255, 255, 255, 0.1)";
-  })
-  .linkDirectionalParticles(link => isHighlighting && isLinkInShortestPath(link) ? 5 : 0)
-  .linkDirectionalParticleWidth(4)
-  .linkDirectionalParticleSpeed(0.01)
+  .linkWidth(2)
+  .linkColor(() => "rgba(255, 255, 255, 0.1)")
   .nodeCanvasObject((node, ctx, globalScale) => {
     const fontSize = 14 / globalScale;
     ctx.font = `600 ${fontSize}px 'Outfit', Sans-Serif`;
@@ -147,70 +139,22 @@ const Graph = ForceGraph()(elem)
     if (isPlaying && Array.from(ants.values()).every(a => a.progress >= 1)) {
         if (currentTurnIdx < allSteps.length - 1) {
             nextTurn();
-        } 
+        } else {
+            // Give a tiny delay for final ant to smooth in before stopping auto-play
+            setTimeout(() => setPlaying(false), 100);
+        }
     }
 
     if (totalAntsCount > 0 && arrivedCount === totalAntsCount && Array.from(ants.values()).every(a => a.progress >= 1)) {
-        if (!isHighlighting) {
-            isHighlighting = true;
-            if (turnDisplay) turnDisplay.innerHTML = `${currentTurnIdx + 1} <span style="color: #fbbf24; font-size: 0.8rem; display: block;">Shortest Path</span>`;
-            setPlaying(false);
-            
-            Graph.linkWidth(Graph.linkWidth());
-            Graph.linkColor(Graph.linkColor());
-            Graph.linkDirectionalParticles(Graph.linkDirectionalParticles());
-            ensureRendering();
-        }
+        setPlaying(false);
     }
   });
-
-function isLinkInShortestPath(link) {
-    if (!shortestPathLinks.size) return false;
-    const sId = String(typeof link.source === 'object' ? link.source.id : link.source);
-    const tId = String(typeof link.target === 'object' ? link.target.id : link.target);
-    const key1 = `${sId}->${tId}`;
-    const key2 = `${tId}->${sId}`;
-    return shortestPathLinks.has(key1) || shortestPathLinks.has(key2);
-}
-
-function computeShortestPathLinks(allSteps, startRoomId, endRoomId) {
-    if (!allSteps || !allSteps.length) return;
-    
-    const antPaths = new Map();
-    allSteps.forEach(step => {
-        step.moves.forEach(move => {
-            if (!antPaths.has(move.antId)) {
-                antPaths.set(move.antId, [startRoomId, move.roomName]);
-            } else {
-                antPaths.get(move.antId).push(move.roomName);
-            }
-        });
-    });
-
-    let shortest = null;
-    antPaths.forEach(path => {
-        if (!shortest || path.length < shortest.length) {
-            shortest = path;
-        }
-    });
-
-    if (shortest) {
-        shortestPathLinks.clear();
-        for (let i = 0; i < shortest.length - 1; i++) {
-            const from = String(shortest[i]);
-            const to = String(shortest[i+1]);
-            shortestPathLinks.add(`${from}->${to}`);
-            shortestPathLinks.add(`${to}->${from}`);
-        }
-    }
-}
 
 function setPlaying(val) {
     isPlaying = val;
     const icon = btnPlay.querySelector('i');
     if (isPlaying) {
         icon.setAttribute('data-lucide', 'pause');
-        isHighlighting = false;
     } else {
         icon.setAttribute('data-lucide', 'play');
     }
@@ -308,11 +252,6 @@ function resetSimulation() {
     turnDisplay.innerHTML = "0";
     setPlaying(false);
     
-    isHighlighting = false;
-    Graph.linkWidth(Graph.linkWidth());
-    Graph.linkColor(Graph.linkColor());
-    Graph.linkDirectionalParticles(Graph.linkDirectionalParticles());
-    
     if (statArrived) statArrived.textContent = "0";
     if (progressBar) progressBar.style.width = "0%";
 }
@@ -330,8 +269,6 @@ fetch("/api/raw")
     if (statTotal) statTotal.textContent = totalAntsCount;
     startRoom = data.nodes.find(n => n.group === "start") || null;
     endRoom = data.nodes.find(n => n.group === "end") || null;
-
-    computeShortestPathLinks(allSteps, startRoom ? startRoom.id : null, endRoom ? endRoom.id : null);
 
     Graph.graphData({ nodes: data.nodes, links: data.links });
     setTimeout(() => Graph.zoomToFit(400, 100), 500);

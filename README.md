@@ -10,33 +10,58 @@ The goal is to solve a flow and pathfinding problem: find the optimal set of pat
 
 ## Project Structure
 
-```
+```text
 lem-in/
 ├── cmd/
 │   └── main.go              # Entry point: reads args and orchestrates the program
 ├── internal/
 │   ├── parser.go            # Parses and validates the input file
-│   ├── pathfinder.go        # Pathfinding logic:  finds and selects optimal paths
-│   └── distributor.go       # Distribution logic: balances load of ants across paths
+│   ├── pathfinder.go        # Pathfinding logic: finds and selects optimal disjoint paths
+│   ├── distributor.go       # Distribution logic: balances load of ants across paths
+│   └── simulation.go        # Core engine: strictly enforces collision rules and movement timing
 ├── tests/
 │   ├── parser_test.go       # Unit tests for the parser
 │   └── distributor_test.go  # Unit tests for the distributor
-└── visualizer/
-    └── frontend/            # Visual representation of the ant farm simulation
+└── visualiser/
+    ├── server.go            # Lightweight Go web server to host the front-end
+    └── front-end/           # Pure JS, HTML, and CSS (Zero Node/NPM dependencies)
 ```
-
----
-
-## Usage
-
-_To be added._
 
 ---
 
 ## Features & Algorithms
 
-### Breadth-First Search (BFS) Pathfinding
-The program uses a **Breadth-First Search (BFS)** algorithm to traverse the network of rooms and tunnels. It systematically explores the graph level by level to identify the shortest and most optimal paths from the `##start` room to the `##end` room, ensuring that disjoint paths are selected to prevent traffic jams.
+### Edmonds-Karp & BFS Pathfinding
+The program uses a variation of the **Edmonds-Karp** algorithm combined with Breadth-First Search (BFS) to traverse the network of rooms and tunnels. It systematically explores the graph to identify the most optimal set of disjoint paths from `##start` to `##end` to prevent network bottlenecks.
 
 ### Ant Distribution & Load Balancing
-To determine which path an ant should take, the program calculates the relative "cost" (arrival delay) of each path as `Length of Path + Ants Assigned To Path So Far`. For every ant, it evaluates all available disjoint paths and directs the ant down the one that yields the lowest cost. If a shorter path becomes overcrowded with queued ants, the algorithm naturally starts spilling ants over into longer paths, ensuring optimal efficiency overall.
+To determine which path an ant should take, the program calculates the relative "cost" (arrival delay) of each path as `Length of Path + Ants Assigned To Path So Far`. It directs ants to the path that yields the lowest cost, gracefully spilling overflow into alternative, slightly longer paths if it calculates that doing so reduces the total turns.
+
+### Strict Collision Engine
+The simulation logic adheres perfectly to the "one ant per room" rule. Our turn timeline iterates using forward lookahead synchronization, actively preventing room collisions while still allowing ants to simultaneously enter and leave the same room in a single turn.
+
+---
+
+## High-Fidelity Visualiser
+
+We have built a beautiful, standalone 3D/2D graphical dashboard to watch your ants navigate the maze! It operates purely on **Go** and standard **JavaScript**, meaning there are no `node_modules` or TS build steps required.
+
+### How to Run
+
+Feed an ant farm map (e.g., `test0.txt`) into the main program, and pipe the output into the visualiser web server:
+
+```powershell
+go run ./cmd test0.txt | go run visualiser/server.go
+```
+
+Then, open your web browser and navigate privately to: **[http://localhost:3000](http://localhost:3000)**
+
+### Dashboard Controls
+
+The Head-Up Display (HUD) tracks your population, arrivals, and progress dynamically. Use the Command Center at the bottom to control the playback:
+
+| Button | Name | Functionality |
+| :---: | :--- | :--- |
+| `▶️` | **Play / Pause** | Automatically animates the turn-by-turn progression of the ants. Toggle to freeze. |
+| `⏭️` | **Next Turn (Step)** | Manually increments the simulation forward by **exactly one turn**, letting you closely inspect collision-free room transfers. |
+| `🔄` | **Reset** | Aborts the current run and instantly snaps the simulation back to Turn 0. |
