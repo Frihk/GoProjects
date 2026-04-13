@@ -22,6 +22,10 @@ type Ant struct {
 	Position int
 }
 
+func tunnelKey(from, to string) string {
+	return from + "->" + to
+}
+
 // SimulateSteps runs the simulation and returns the structured steps.
 func SimulateSteps(ants int, paths [][]string, endRoom string) []Step {
 	assignments := DistributeAnts(ants, paths)
@@ -41,6 +45,7 @@ func SimulateSteps(ants int, paths [][]string, endRoom string) []Step {
 
 	for !allFinished {
 		var moves []Move
+		usedTunnels := make(map[string]bool)
 		allFinished = true
 
 		for i := range allAnts {
@@ -57,8 +62,15 @@ func SimulateSteps(ants int, paths [][]string, endRoom string) []Step {
 
 			allFinished = false
 			room := ant.Path[ant.Position]
+			fromRoom := "start"
+			if ant.Position > 0 {
+				fromRoom = ant.Path[ant.Position-1]
+			}
 
-			if capacity[room] < 1 {
+			tunnel := tunnelKey(fromRoom, room)
+
+			if !usedTunnels[tunnel] && capacity[room] < 1 {
+				usedTunnels[tunnel] = true
 				if room != endRoom {
 					capacity[room]++
 				}
