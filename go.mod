@@ -1,3 +1,3 @@
 module lem-in
 
-go 1.22
+go 1.24.3
