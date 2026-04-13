@@ -536,9 +536,11 @@ func TestProgrammaticGraphs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		content  string
-		maxTurns int
+		name            string
+		content         string
+		maxTurns        int
+		expectedTurns   int
+		movesPerTurnMax int
 	}{
 		{
 			// Two node-disjoint paths: Start→A→End, Start→B→End.
@@ -556,10 +558,12 @@ func TestProgrammaticGraphs(t *testing.T) {
 		},
 		{
 			// Direct connection: Start→End (1 hop).
-			// 5 ants → 5 turns.
-			name:     "direct_connection",
-			content:  "5\n##start\nstart 0 0\n##end\nend 1 0\nstart-end\n",
-			maxTurns: 5,
+			// 5 ants, 1 tunnel → exactly 5 turns with 1 move per turn.
+			name:            "direct_connection",
+			content:         "5\n##start\nstart 0 0\n##end\nend 1 0\nstart-end\n",
+			maxTurns:        5,
+			expectedTurns:   5,
+			movesPerTurnMax: 1,
 		},
 	}
 
@@ -572,12 +576,23 @@ func TestProgrammaticGraphs(t *testing.T) {
 
 			stdout, _, _ := runLemIn(t, path)
 
-			numTurns, _, err := parseTurns(stdout)
+			numTurns, turns, err := parseTurns(stdout)
 			if err != nil {
 				t.Fatalf("parse output: %v", err)
 			}
 			if numTurns > tc.maxTurns {
 				t.Errorf("expected at most %d turns, got %d", tc.maxTurns, numTurns)
+			}
+			if tc.expectedTurns > 0 && numTurns != tc.expectedTurns {
+				t.Errorf("expected exactly %d turns, got %d", tc.expectedTurns, numTurns)
+			}
+			if tc.movesPerTurnMax > 0 {
+				for turnIdx, moves := range turns {
+					if len(moves) > tc.movesPerTurnMax {
+						t.Errorf("turn %d: expected at most %d move(s), got %d: %v",
+							turnIdx+1, tc.movesPerTurnMax, len(moves), moves)
+					}
+				}
 			}
 		})
 	}
