@@ -8,12 +8,15 @@ VISUALISER := ./visualiser
 .PHONY: all
 all: $(LEMIN) $(VISUALISER)
 
+.PHONY: $(LEMIN)
 $(LEMIN):
 	$(GOCMD) build -o $@ ./cmd
 
+.PHONY: $(VISUALISER)
 $(VISUALISER): $(INDEXJS)
 	$(GOCMD) build -o visualiser $(FRONTEND_DIR)/src
 
+.PHONY: $(INDEXJS)
 $(INDEXJS):
 	cd $(FRONTEND_DIR) && npm install && npm run build
 
